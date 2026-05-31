@@ -27,7 +27,7 @@ Top-level keys, all prefixed `hf.`:
 - **`hf.categories`** — array of groupings. Fields: `id` (`c_*`), `name`, `color` (hex), `order`.
 - **`hf.habits`** — array of habit definitions. Fields: `id` (`h_*`), `name`, `categoryId`, `order`, `createdAt` (ISO 8601). The `createdAt` field is load-bearing — it's how the app keeps past days static when new habits are added (any habit with `createdAt > date` should NOT count toward that date's stats).
 - **`hf.days`** — object keyed by date string (`"YYYY-MM-DD"`). Each day: `completions` (`{ habitId: bool }`), `reflection` (`{ wentWell, wasHard, wantDifferent }`), `submitted` (bool), `sealedAt` (ISO), and optionally `aiResponse` (`{ hint, compliance_read, suggestions: [...], hintDismissed?, generatedAt }`).
-- **`hf.settings`** — single config object: `apiKey` (Anthropic), `sortMode` (`"category" | "order"`), `overallStreak`, `longestStreak`, `categoryStreaks` (`{ categoryId: number }`), `devMode` (bool), `dateOverride` (ISO or null).
+- **`hf.settings`** — single config object: `apiKey` (Anthropic), `sortMode` (`"category" | "order"`), `overallStreak`, `longestStreak`, `categoryStreaks` (`{ categoryId: number }`), `devMode` (bool), `dateOverride` (ISO or null), `theme` (`"light" | "dark" | "system"`, default `"dark"`).
 - **`hf.drafts`** — ephemeral, keyed by date. Stores unsubmitted EOD reflection text so users don't lose drafts on refresh. Auto-pruned after 7 days. Cleared on seal.
 
 ## Critical invariants (don't break these)

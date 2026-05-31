@@ -14,8 +14,46 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    /* ════════════════════════════════════════════
+       THEME TOKENS (dark = default, light = override)
+    ════════════════════════════════════════════ */
+    :root {
+      --bg: #0a0a0a;
+      --fg: 255,255,255;        /* foreground RGB — text, borders, faint surfaces */
+      --ac: 52,211,153;         /* accent RGB (emerald-400) */
+      --ac2: 16,185,129;        /* accent-2 RGB (emerald-500) */
+      --ac-hex: #34d399;
+      --ac2-hex: #10b981;
+      --tbar: 8,8,8;            /* tab bar base RGB */
+      --opt-bg: #1a1a1a;        /* native <select> option background */
+      --glowb: 99,102,241;      /* second ambient glow (indigo) */
+    }
+    :root[data-theme="light"] {
+      --bg: #f6f7f9;
+      --fg: 28,30,38;           /* dark ink */
+      --ac: 236,72,153;         /* pink-500 */
+      --ac2: 219,39,119;        /* pink-600 */
+      --ac-hex: #ec4899;
+      --ac2-hex: #db2777;
+      --tbar: 255,255,255;
+      --opt-bg: #ffffff;
+      --glowb: 244,114,182;     /* soft rose */
+    }
+    /* Light-mode surface tuning — keep the modal readable over its scrim and
+       soften the heavy dark shadows that are tuned for a black background. */
+    :root[data-theme="light"] .hf-overlay { background: rgba(0,0,0,.28); }
+    :root[data-theme="light"] .hf-modal   { background: #ffffff; }
+    :root[data-theme="light"] .glass      { box-shadow: 0 6px 22px rgba(0,0,0,.07); }
+    :root[data-theme="light"] .gpill      { box-shadow: 0 4px 14px rgba(0,0,0,.06); }
+
+    /* ── Theme segmented control (Settings) ── */
+    .seg { display:flex; gap:4px; background:rgba(var(--fg),.05); border:1px solid rgba(var(--fg),.1); border-radius:.75rem; padding:4px; }
+    .seg-btn { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:9px 6px; border-radius:.55rem; font-size:13px; font-weight:600; color:rgba(var(--fg),.55); transition:color 120ms, background 120ms; }
+    .seg-btn.on { background:rgba(var(--ac2),.16); color:var(--ac-hex); box-shadow:inset 0 0 0 1px rgba(var(--ac),.22); }
+
     body {
-      background: #0a0a0a;
+      background: var(--bg);
+      color: rgba(var(--fg),.9);
       min-height: 100dvh;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       -webkit-font-smoothing: antialiased;
@@ -40,7 +78,7 @@
       position: fixed; top: -200px; left: -200px;
       width: 700px; height: 700px;
       pointer-events: none; z-index: 0;
-      background: radial-gradient(circle, rgba(16,185,129,.09) 0%, transparent 65%);
+      background: radial-gradient(circle, rgba(var(--ac2),.09) 0%, transparent 65%);
       filter: blur(40px);
       animation: ga 38s ease-in-out infinite;
     }
@@ -48,7 +86,7 @@
       position: fixed; bottom: -200px; right: -200px;
       width: 700px; height: 700px;
       pointer-events: none; z-index: 0;
-      background: radial-gradient(circle, rgba(99,102,241,.07) 0%, transparent 65%);
+      background: radial-gradient(circle, rgba(var(--glowb),.07) 0%, transparent 65%);
       filter: blur(40px);
       animation: gb 44s ease-in-out infinite;
     }
@@ -56,16 +94,16 @@
     /* ── Glass card ── */
     .glass {
       position: relative;
-      background: rgba(255,255,255,.045);
+      background: rgba(var(--fg),.045);
       backdrop-filter: blur(20px) saturate(140%);
       -webkit-backdrop-filter: blur(20px) saturate(140%);
-      border: 1px solid rgba(255,255,255,.08);
-      box-shadow: 0 8px 32px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.08);
+      border: 1px solid rgba(var(--fg),.08);
+      box-shadow: 0 8px 32px rgba(0,0,0,.4), inset 0 1px 0 rgba(var(--fg),.08);
       border-radius: 1rem;
     }
     .glass::before {
       content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px;
-      background: linear-gradient(135deg, rgba(255,255,255,.13), rgba(255,255,255,.02));
+      background: linear-gradient(135deg, rgba(var(--fg),.13), rgba(var(--fg),.02));
       -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
       mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -76,27 +114,27 @@
     /* ── Glass pill (overflow hidden for clean corners) ── */
     .gpill {
       position: relative;
-      background: rgba(255,255,255,.045);
+      background: rgba(var(--fg),.045);
       backdrop-filter: blur(20px) saturate(140%);
       -webkit-backdrop-filter: blur(20px) saturate(140%);
-      border: 1px solid rgba(255,255,255,.08);
-      box-shadow: 0 4px 16px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.08);
+      border: 1px solid rgba(var(--fg),.08);
+      box-shadow: 0 4px 16px rgba(0,0,0,.3), inset 0 1px 0 rgba(var(--fg),.08);
       border-radius: 9999px;
       overflow: hidden;
     }
 
     /* ── Tab bar background ── */
     .tbar {
-      background: rgba(8,8,8,.8);
+      background: rgba(var(--tbar),.8);
       backdrop-filter: blur(28px) saturate(160%);
       -webkit-backdrop-filter: blur(28px) saturate(160%);
     }
 
     /* ── Emerald glow flash on habit complete ── */
     @keyframes eflash {
-      0%   { box-shadow: 0 8px 32px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.08), 0 0 0 0 rgba(52,211,153,0); }
-      35%  { box-shadow: 0 8px 32px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.08), 0 0 26px 6px rgba(52,211,153,.25); }
-      100% { box-shadow: 0 8px 32px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.08), 0 0 0 0 rgba(52,211,153,0); }
+      0%   { box-shadow: 0 8px 32px rgba(0,0,0,.4), inset 0 1px 0 rgba(var(--fg),.08), 0 0 0 0 rgba(var(--ac),0); }
+      35%  { box-shadow: 0 8px 32px rgba(0,0,0,.4), inset 0 1px 0 rgba(var(--fg),.08), 0 0 26px 6px rgba(var(--ac),.25); }
+      100% { box-shadow: 0 8px 32px rgba(0,0,0,.4), inset 0 1px 0 rgba(var(--fg),.08), 0 0 0 0 rgba(var(--ac),0); }
     }
     .eflash { animation: eflash 380ms ease-out forwards; }
 
@@ -116,19 +154,19 @@
 
     /* ── Sort active state ── */
     .son {
-      background: rgba(52,211,153,.13) !important;
-      color: #34d399 !important;
-      box-shadow: inset 0 0 0 1px rgba(52,211,153,.28) !important;
+      background: rgba(var(--ac),.13) !important;
+      color: var(--ac-hex) !important;
+      box-shadow: inset 0 0 0 1px rgba(var(--ac),.28) !important;
     }
 
     /* ── Tab active / inactive ── */
-    .ton { color: #34d399; }
-    .ton .tico { filter: drop-shadow(0 0 5px rgba(52,211,153,.55)); }
-    .toff { color: rgba(255,255,255,.38); }
+    .ton { color: var(--ac-hex); }
+    .ton .tico { filter: drop-shadow(0 0 5px rgba(var(--ac),.55)); }
+    .toff { color: rgba(var(--fg),.38); }
 
     /* ── Habit done state (Today view) ── */
     .hdone { opacity: .62; }
-    .hdone .hname { text-decoration: line-through; text-decoration-color: rgba(255,255,255,.25); }
+    .hdone .hname { text-decoration: line-through; text-decoration-color: rgba(var(--fg),.25); }
 
     /* ── Layout padding for fixed nav bars + iOS safe areas ── */
     /* Mobile: no fixed top bar, so the content container clears the notch /
@@ -180,56 +218,56 @@
     /* ── Inline rename input ── */
     .irinput {
       background: transparent; border: none; outline: none;
-      border-bottom: 1px solid rgba(52,211,153,.45);
-      color: rgba(255,255,255,.82); font-size: 16px; font-weight: 500;
+      border-bottom: 1px solid rgba(var(--ac),.45);
+      color: rgba(var(--fg),.82); font-size: 16px; font-weight: 500;
       font-family: inherit; padding: 0 2px; min-width: 48px;
       flex: 1;
     }
 
     /* ── Drag visual feedback ── */
     .dragging { opacity: .42 !important; transform: rotate(1.5deg) !important; }
-    .drop-before { border-top: 2px solid #34d399 !important; }
-    .drop-after  { border-bottom: 2px solid #34d399 !important; }
+    .drop-before { border-top: 2px solid var(--ac-hex) !important; }
+    .drop-after  { border-bottom: 2px solid var(--ac-hex) !important; }
 
     /* ── Ghost button ── */
     .ghost-btn {
       display: flex; align-items: center; justify-content: center; gap: 6px;
       width: 100%; padding: 10px; border-radius: .75rem;
-      border: 1px dashed rgba(255,255,255,.11);
-      color: rgba(255,255,255,.3); font-size: 13px; font-weight: 500;
+      border: 1px dashed rgba(var(--fg),.11);
+      color: rgba(var(--fg),.3); font-size: 13px; font-weight: 500;
       transition: color 150ms, border-color 150ms;
     }
-    .ghost-btn:hover { color: rgba(255,255,255,.52); border-color: rgba(255,255,255,.22); }
+    .ghost-btn:hover { color: rgba(var(--fg),.52); border-color: rgba(var(--fg),.22); }
 
     /* ── Icon button ── */
     .icbtn {
       display: flex; align-items: center; justify-content: center;
       width: 30px; height: 30px; border-radius: .5rem; flex-shrink: 0;
-      color: rgba(255,255,255,.32); transition: color 100ms, background 100ms;
+      color: rgba(var(--fg),.32); transition: color 100ms, background 100ms;
     }
-    .icbtn:hover { color: rgba(255,255,255,.72); background: rgba(255,255,255,.07); }
+    .icbtn:hover { color: rgba(var(--fg),.72); background: rgba(var(--fg),.07); }
     .icbtn:active { transform: scale(.88); }
     .icbtn.rose:hover { color: #fb7185; }
-    .icbtn.em:hover   { color: #34d399; }
+    .icbtn.em:hover   { color: var(--ac-hex); }
     .icbtn[disabled]  { opacity: .2; pointer-events: none; }
 
     /* ── Modal form inputs ── */
     .m-inp {
-      width: 100%; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12);
-      border-radius: .75rem; padding: 12px 16px; color: rgba(255,255,255,.9);
+      width: 100%; background: rgba(var(--fg),.07); border: 1px solid rgba(var(--fg),.12);
+      border-radius: .75rem; padding: 12px 16px; color: rgba(var(--fg),.9);
       font-size: 16px; font-family: inherit; outline: none; transition: border-color 150ms;
     }
-    .m-inp:focus { border-color: rgba(52,211,153,.4); }
+    .m-inp:focus { border-color: rgba(var(--ac),.4); }
     .m-sel {
       -webkit-appearance: none; appearance: none; cursor: pointer;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.4)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6,9 12,15 18,9'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(150,150,150,0.9)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6,9 12,15 18,9'/%3E%3C/svg%3E");
       background-repeat: no-repeat; background-position: right 14px center; padding-right: 38px;
     }
-    .m-sel option { background: #1a1a1a; color: rgba(255,255,255,.9); }
+    .m-sel option { background: var(--opt-bg); color: rgba(var(--fg),.9); }
     .m-sel:disabled { opacity: .6; cursor: default; }
 
     /* ── Drag handle ── */
-    .dh { color: rgba(255,255,255,.18); cursor: grab; flex-shrink: 0; padding: 2px 4px; line-height: 1; user-select: none; }
+    .dh { color: rgba(var(--fg),.18); cursor: grab; flex-shrink: 0; padding: 2px 4px; line-height: 1; user-select: none; }
     .dh:active { cursor: grabbing; }
 
     /* ════════════════════════════════════════════
@@ -243,19 +281,32 @@
     /* ── Toggle switch (dev mode) ── */
     .hf-switch { position:relative; display:inline-block; width:44px; height:26px; flex-shrink:0; }
     .hf-switch input { opacity:0; width:0; height:0; }
-    .hf-switch .sl { position:absolute; inset:0; background:rgba(255,255,255,.14); border-radius:9999px; transition:background 160ms; }
+    .hf-switch .sl { position:absolute; inset:0; background:rgba(var(--fg),.14); border-radius:9999px; transition:background 160ms; }
     .hf-switch .sl::before { content:''; position:absolute; height:20px; width:20px; left:3px; top:3px; background:#fff; border-radius:50%; transition:transform 160ms; box-shadow:0 1px 3px rgba(0,0,0,.4); }
-    .hf-switch input:checked + .sl { background:#10b981; }
+    .hf-switch input:checked + .sl { background:var(--ac2-hex); }
     .hf-switch input:checked + .sl::before { transform:translateX(18px); }
   </style>
+  <script>
+    /* Apply the saved theme before first paint to avoid a flash of the wrong one. */
+    (function(){
+      try {
+        var s = JSON.parse(localStorage.getItem('hf.settings') || '{}');
+        var t = s.theme || 'dark';
+        if (t === 'system') {
+          t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+        }
+        document.documentElement.setAttribute('data-theme', t);
+      } catch (e) { document.documentElement.setAttribute('data-theme', 'dark'); }
+    })();
+  </script>
 </head>
 <body>
   <div class="glow-a" aria-hidden="true"></div>
   <div class="glow-b" aria-hidden="true"></div>
-  <button id="hf-gear" aria-label="Settings" class="tap95" style="position:fixed;top:max(14px,env(safe-area-inset-top));right:16px;z-index:50;width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(255,255,255,.06);backdrop-filter:blur(20px) saturate(140%);-webkit-backdrop-filter:blur(20px) saturate(140%);border:1px solid rgba(255,255,255,.1);box-shadow:0 4px 16px rgba(0,0,0,.3);color:rgba(255,255,255,.55)"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+  <button id="hf-gear" aria-label="Settings" class="tap95" style="position:fixed;top:max(14px,env(safe-area-inset-top));right:16px;z-index:50;width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(var(--fg),.06);backdrop-filter:blur(20px) saturate(140%);-webkit-backdrop-filter:blur(20px) saturate(140%);border:1px solid rgba(var(--fg),.1);box-shadow:0 4px 16px rgba(0,0,0,.3);color:rgba(var(--fg),.55)"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
 
   <!-- Desktop top tab bar -->
-  <nav class="hidden md:block fixed top-0 inset-x-0 z-40 tbar" style="border-bottom:1px solid rgba(255,255,255,.07)">
+  <nav class="hidden md:block fixed top-0 inset-x-0 z-40 tbar" style="border-bottom:1px solid rgba(var(--fg),.07)">
     <div class="max-w-lg mx-auto px-4 py-3 flex gap-1" id="top-tabs"></div>
   </nav>
 
@@ -269,7 +320,7 @@
   </div>
 
   <!-- Mobile bottom tab bar -->
-  <nav class="md:hidden fixed bottom-0 inset-x-0 z-40 tbar" style="border-top:1px solid rgba(255,255,255,.07)">
+  <nav class="md:hidden fixed bottom-0 inset-x-0 z-40 tbar" style="border-top:1px solid rgba(var(--fg),.07)">
     <div class="flex justify-around px-4" id="bottom-tabs"
       style="padding-top:10px;padding-bottom:max(12px,env(safe-area-inset-bottom))"></div>
   </nav>
@@ -354,7 +405,7 @@
       'position:fixed;left:50%;transform:translateX(-50%) translateY(8px);' +
       'max-width:90%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;' +
       'z-index:120;padding:11px 18px;border-radius:9999px;pointer-events:none;' +
-      'color:rgba(255,255,255,.9);font-size:13px;font-weight:500;opacity:0;' +
+      'color:rgba(var(--fg),.9);font-size:13px;font-weight:500;opacity:0;' +
       'transition:opacity .2s ease, transform .2s ease;';
     /* Bottom-center on mobile (above tab bar + home indicator); top-center on desktop. */
     if (window.matchMedia && window.matchMedia('(min-width:768px)').matches) {
@@ -445,7 +496,7 @@
     lsSet('hf.categories', cats);
     lsSet('hf.habits', habits);
     lsSet('hf.days', {});
-    lsSet('hf.settings', { sortMode: 'category', overallStreak: 0, longestStreak: 0, categoryStreaks: cst, devMode: false, dateOverride: null });
+    lsSet('hf.settings', { sortMode: 'category', overallStreak: 0, longestStreak: 0, categoryStreaks: cst, devMode: false, dateOverride: null, theme: 'dark' });
   })();
 
   /* ── App state ───────────────────────────────────────────────────────────── */
@@ -455,7 +506,7 @@
   function getHabits()   { return lsGet('hf.habits')     || []; }
   function getDays()     { return lsGet('hf.days')        || {}; }
   function getSettings() {
-    return lsGet('hf.settings') || { sortMode: 'category', overallStreak: 0, longestStreak: 0, categoryStreaks: {}, devMode: false, dateOverride: null };
+    return lsGet('hf.settings') || { sortMode: 'category', overallStreak: 0, longestStreak: 0, categoryStreaks: {}, devMode: false, dateOverride: null, theme: 'dark' };
   }
 
   /* ── "Today" resolution (honours dev-mode date override) ───────────────────
@@ -513,7 +564,7 @@
     var r = 10, circ = 2 * Math.PI * r;
     var off = total > 0 ? (1 - done / total) * circ : circ;
     return '<svg width="28" height="28" viewBox="0 0 28 28" style="flex-shrink:0" aria-hidden="true">' +
-      '<circle cx="14" cy="14" r="10" fill="none" stroke="rgba(255,255,255,.09)" stroke-width="2.5"/>' +
+      '<circle cx="14" cy="14" r="10" fill="none" stroke="rgba(150,150,150,.28)" stroke-width="2.5"/>' +
       '<circle cx="14" cy="14" r="10" fill="none" stroke="' + color + '" stroke-width="2.5" stroke-linecap="round"' +
       ' stroke-dasharray="' + circ.toFixed(2) + ' ' + circ.toFixed(2) + '"' +
       ' stroke-dashoffset="' + off.toFixed(2) + '" transform="rotate(-90 14 14)"/>' +
@@ -592,13 +643,13 @@
     var on = mode === current;
     return '<button class="sort-btn tap97' + (on ? ' son' : '') +
       '" data-mode="' + mode + '" style="border-radius:9999px;padding:8px 18px;font-size:13px;font-weight:500;min-height:36px;' +
-      'color:' + (on ? '#34d399' : 'rgba(255,255,255,.42)') + '">' + label + '</button>';
+      'color:' + (on ? 'var(--ac-hex)' : 'rgba(var(--fg),.42)') + '">' + label + '</button>';
   }
 
   function habitRow(habit, done, showDot, cat) {
     var check = done
-      ? '<div style="width:24px;height:24px;border-radius:50%;background:#10b981;border:2px solid #10b981;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + checkSVG() + '</div>'
-      : '<div style="width:24px;height:24px;border-radius:50%;border:2px solid rgba(255,255,255,.2);flex-shrink:0"></div>';
+      ? '<div style="width:24px;height:24px;border-radius:50%;background:var(--ac2-hex);border:2px solid var(--ac2-hex);display:flex;align-items:center;justify-content:center;flex-shrink:0">' + checkSVG() + '</div>'
+      : '<div style="width:24px;height:24px;border-radius:50%;border:2px solid rgba(var(--fg),.2);flex-shrink:0"></div>';
     var dot = (showDot && cat)
       ? '<div style="width:8px;height:8px;border-radius:50%;background:' + cat.color + ';flex-shrink:0"></div>'
       : '';
@@ -606,7 +657,7 @@
       '" data-hid="' + habit.id + '" aria-pressed="' + (done ? 'true' : 'false') +
       '" style="display:flex;align-items:center;gap:16px;width:100%;text-align:left;padding:16px 20px;border-radius:1rem;min-height:56px">' +
       check + dot +
-      '<span class="hname" style="color:rgba(255,255,255,.82);font-size:15px">' + habit.name + '</span>' +
+      '<span class="hname" style="color:rgba(var(--fg),.82);font-size:15px">' + habit.name + '</span>' +
       '</button>';
   }
 
@@ -621,7 +672,7 @@
           '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:0 4px">' +
             '<div style="display:flex;align-items:center;gap:8px">' +
               '<div style="width:10px;height:10px;border-radius:50%;background:' + cat.color + ';flex-shrink:0"></div>' +
-              '<span style="color:rgba(255,255,255,.68);font-size:13px;font-weight:500">' + cat.name + '</span>' +
+              '<span style="color:rgba(var(--fg),.68);font-size:13px;font-weight:500">' + cat.name + '</span>' +
             '</div>' +
             ringSVG(done, ch.length, cat.color) +
           '</div>' +
@@ -680,50 +731,50 @@
 
         /* Three explicit choices, stacked full-width below the options. */
         var laterSkip =
-          '<button data-plan-later="' + idx + '" data-origin="' + od + '" class="tap97" style="width:100%;margin-top:4px;background:transparent;border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.55);font-size:13px;font-weight:500;padding:9px;border-radius:.6rem">Maybe later</button>' +
+          '<button data-plan-later="' + idx + '" data-origin="' + od + '" class="tap97" style="width:100%;margin-top:4px;background:transparent;border:1px solid rgba(var(--fg),.12);color:rgba(var(--fg),.55);font-size:13px;font-weight:500;padding:9px;border-radius:.6rem">Maybe later</button>' +
           '<button data-plan-skip="' + idx + '" data-origin="' + od + '" class="tap97" style="width:100%;margin-top:6px;background:transparent;border:1px solid rgba(251,113,133,.22);color:rgba(251,113,133,.8);font-size:13px;font-weight:500;padding:9px;border-radius:.6rem">Not for me</button>';
 
         /* Backward-compat: old suggestions without an options array keep the
            original single Apply layout, now followed by the three-state choices. */
         if (!Array.isArray(s.options)) {
-          return '<div class="glass" style="border-radius:1rem;padding:16px 18px;margin-bottom:10px;background:rgba(255,255,255,.03)">' +
-            '<p style="color:rgba(255,255,255,.92);font-size:15px;font-weight:600;margin-bottom:6px">' + esc(s.title || '') + '</p>' +
-            '<p style="color:rgba(255,255,255,.75);font-size:13px;line-height:1.5;margin-bottom:6px">' + esc(s.why || '') + '</p>' +
-            '<p style="color:rgba(255,255,255,.55);font-size:12px;font-style:italic;line-height:1.5;margin-bottom:12px">' + esc(s.impact_prediction || '') + '</p>' +
-            '<button data-plan-apply="' + idx + '" data-origin="' + od + '" class="tap97" style="width:100%;background:rgba(16,185,129,.15);border:1px solid rgba(52,211,153,.2);color:#34d399;font-size:13px;font-weight:600;padding:9px;border-radius:.6rem">Apply</button>' +
+          return '<div class="glass" style="border-radius:1rem;padding:16px 18px;margin-bottom:10px;background:rgba(var(--fg),.03)">' +
+            '<p style="color:rgba(var(--fg),.92);font-size:15px;font-weight:600;margin-bottom:6px">' + esc(s.title || '') + '</p>' +
+            '<p style="color:rgba(var(--fg),.75);font-size:13px;line-height:1.5;margin-bottom:6px">' + esc(s.why || '') + '</p>' +
+            '<p style="color:rgba(var(--fg),.55);font-size:12px;font-style:italic;line-height:1.5;margin-bottom:12px">' + esc(s.impact_prediction || '') + '</p>' +
+            '<button data-plan-apply="' + idx + '" data-origin="' + od + '" class="tap97" style="width:100%;background:rgba(var(--ac2),.15);border:1px solid rgba(var(--ac),.2);color:var(--ac-hex);font-size:13px;font-weight:600;padding:9px;border-radius:.6rem">Apply</button>' +
             laterSkip +
           '</div>';
         }
 
         var howHTML = s.how
           ? '<p style="font-size:13px;line-height:1.5;margin-bottom:8px">' +
-              '<span style="color:rgba(255,255,255,.55);font-style:italic">Quick tip: </span>' +
-              '<span style="color:rgba(255,255,255,.7)">' + esc(s.how) + '</span>' +
+              '<span style="color:rgba(var(--fg),.55);font-style:italic">Quick tip: </span>' +
+              '<span style="color:rgba(var(--fg),.7)">' + esc(s.how) + '</span>' +
             '</p>'
           : '';
 
         var optsHTML = s.options.map(function(o, oi) {
-          return '<div style="border-radius:.75rem;padding:12px 14px;margin-bottom:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)">' +
-            '<p style="color:rgba(255,255,255,.9);font-size:14px;font-weight:500;margin-bottom:4px">' + esc(o.label || '') + '</p>' +
-            '<p style="color:rgba(255,255,255,.65);font-size:12px;line-height:1.45;margin-bottom:10px">→ ' + esc(o.preview || '') + '</p>' +
-            '<button data-apply-sug="' + idx + '" data-apply-opt="' + oi + '" data-origin="' + od + '" class="tap97" style="width:100%;background:rgba(16,185,129,.15);border:1px solid rgba(52,211,153,.2);color:#34d399;font-size:13px;font-weight:600;padding:9px;border-radius:.6rem">Apply this</button>' +
+          return '<div style="border-radius:.75rem;padding:12px 14px;margin-bottom:8px;background:rgba(var(--fg),.04);border:1px solid rgba(var(--fg),.06)">' +
+            '<p style="color:rgba(var(--fg),.9);font-size:14px;font-weight:500;margin-bottom:4px">' + esc(o.label || '') + '</p>' +
+            '<p style="color:rgba(var(--fg),.65);font-size:12px;line-height:1.45;margin-bottom:10px">→ ' + esc(o.preview || '') + '</p>' +
+            '<button data-apply-sug="' + idx + '" data-apply-opt="' + oi + '" data-origin="' + od + '" class="tap97" style="width:100%;background:rgba(var(--ac2),.15);border:1px solid rgba(var(--ac),.2);color:var(--ac-hex);font-size:13px;font-weight:600;padding:9px;border-radius:.6rem">Apply this</button>' +
           '</div>';
         }).join('');
 
-        return '<div class="glass" style="border-radius:1rem;padding:16px 18px;margin-bottom:10px;background:rgba(255,255,255,.03)">' +
-          '<p style="color:rgba(255,255,255,.92);font-size:15px;font-weight:600;margin-bottom:6px">' + esc(s.title || '') + '</p>' +
-          '<p style="color:rgba(255,255,255,.75);font-size:13px;line-height:1.5;margin-bottom:8px">' + esc(s.why || '') + '</p>' +
+        return '<div class="glass" style="border-radius:1rem;padding:16px 18px;margin-bottom:10px;background:rgba(var(--fg),.03)">' +
+          '<p style="color:rgba(var(--fg),.92);font-size:15px;font-weight:600;margin-bottom:6px">' + esc(s.title || '') + '</p>' +
+          '<p style="color:rgba(var(--fg),.75);font-size:13px;line-height:1.5;margin-bottom:8px">' + esc(s.why || '') + '</p>' +
           howHTML +
-          '<p style="color:rgba(255,255,255,.55);font-size:12px;font-style:italic;line-height:1.5;margin-bottom:0">' + esc(s.impact_prediction || '') + '</p>' +
-          '<div style="height:1px;background:rgba(255,255,255,.08);margin:14px 0"></div>' +
-          '<p style="color:rgba(255,255,255,.55);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Your options:</p>' +
+          '<p style="color:rgba(var(--fg),.55);font-size:12px;font-style:italic;line-height:1.5;margin-bottom:0">' + esc(s.impact_prediction || '') + '</p>' +
+          '<div style="height:1px;background:rgba(var(--fg),.08);margin:14px 0"></div>' +
+          '<p style="color:rgba(var(--fg),.55);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Your options:</p>' +
           optsHTML +
           laterSkip +
         '</div>';
       }).join('');
       planHTML =
         '<div class="glass" style="border-radius:1.25rem;padding:18px;margin-bottom:20px">' +
-          '<p style="color:rgba(52,211,153,.8);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px">Coach’s plan from yesterday</p>' +
+          '<p style="color:rgba(var(--ac),.8);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px">Coach’s plan from yesterday</p>' +
           subCards +
         '</div>';
     }
@@ -746,15 +797,15 @@
       var missedH = yh.find(function(x) { return !yc[x.id]; });
       /* Don't claim a "strongest" category when nothing was actually completed. */
       var strongestSeg = (best && bestR > 0)
-        ? ' <span style="color:rgba(255,255,255,.22)">•</span> Strongest: ' + best.name
+        ? ' <span style="color:rgba(var(--fg),.22)">•</span> Strongest: ' + best.name
         : '';
       yHTML =
         '<div class="glass" style="border-radius:1.25rem;padding:16px 20px;margin-bottom:20px">' +
-          '<p style="color:rgba(255,255,255,.36);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px">Yesterday</p>' +
-          '<p style="color:rgba(255,255,255,.78);font-size:14px;line-height:1.6">' +
+          '<p style="color:rgba(var(--fg),.36);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px">Yesterday</p>' +
+          '<p style="color:rgba(var(--fg),.78);font-size:14px;line-height:1.6">' +
             yDone + '/' + yh.length + ' habits' +
             strongestSeg +
-            ' <span style="color:rgba(255,255,255,.22)">•</span> ' +
+            ' <span style="color:rgba(var(--fg),.22)">•</span> ' +
             'Missed: ' + (missedH ? missedH.name : 'nothing') +
           '</p>' +
         '</div>';
@@ -765,7 +816,7 @@
       if (hasPriorSealed) {
         yHTML =
           '<div class="glass" style="border-radius:1.25rem;padding:16px 20px;margin-bottom:20px">' +
-            '<p style="color:rgba(255,255,255,.6);font-size:14px;line-height:1.6">No reflection yesterday. Fresh start today.</p>' +
+            '<p style="color:rgba(var(--fg),.6);font-size:14px;line-height:1.6">No reflection yesterday. Fresh start today.</p>' +
           '</div>';
       }
     }
@@ -774,9 +825,9 @@
     var pillsHTML = cats.map(function(cat) {
       return '<div class="gpill" style="display:flex;align-items:center;gap:8px;padding:8px 14px;flex-shrink:0">' +
         '<div style="width:8px;height:8px;border-radius:50%;background:' + cat.color + ';flex-shrink:0"></div>' +
-        '<span style="color:rgba(255,255,255,.68);font-size:12px;white-space:nowrap">' + cat.name + '</span>' +
-        '<span style="color:rgba(255,255,255,.25);font-size:12px">•</span>' +
-        '<span style="color:rgba(255,255,255,.85);font-size:12px;font-weight:600;font-variant-numeric:tabular-nums">' + (csk[cat.id] || 0) + '</span>' +
+        '<span style="color:rgba(var(--fg),.68);font-size:12px;white-space:nowrap">' + cat.name + '</span>' +
+        '<span style="color:rgba(var(--fg),.25);font-size:12px">•</span>' +
+        '<span style="color:rgba(var(--fg),.85);font-size:12px;font-weight:600;font-variant-numeric:tabular-nums">' + (csk[cat.id] || 0) + '</span>' +
       '</div>';
     }).join('');
 
@@ -787,27 +838,27 @@
     var refl    = td.reflection || {};
     var lockIco = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
     var lockHTML = sealed
-      ? '<div style="display:inline-flex;align-items:center;gap:6px;color:rgba(52,211,153,.8);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">' + lockIco + '<span>Check-ins sealed</span></div>'
+      ? '<div style="display:inline-flex;align-items:center;gap:6px;color:rgba(var(--ac),.8);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">' + lockIco + '<span>Check-ins sealed</span></div>'
       : '';
     var eodHTML;
     if (sealed) {
       var sealedAnswer = function(label, val) {
         return '<div style="margin-bottom:14px">' +
-          '<p style="color:rgba(255,255,255,.4);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">' + label + '</p>' +
-          '<p style="color:rgba(255,255,255,.72);font-size:14px;font-style:italic;line-height:1.55">' + (val ? esc(val) : '—') + '</p>' +
+          '<p style="color:rgba(var(--fg),.4);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">' + label + '</p>' +
+          '<p style="color:rgba(var(--fg),.72);font-size:14px;font-style:italic;line-height:1.55">' + (val ? esc(val) : '—') + '</p>' +
         '</div>';
       };
       var teaserHTML;
       if (td.aiResponse && td.aiResponse.hintDismissed) {
-        teaserHTML = '<p style="color:rgba(255,255,255,.4);font-size:13px;line-height:1.5">Coach plan saved for tomorrow.</p>';
+        teaserHTML = '<p style="color:rgba(var(--fg),.4);font-size:13px;line-height:1.5">Coach plan saved for tomorrow.</p>';
       } else if (td.aiResponse && td.aiResponse.hint) {
         teaserHTML =
           '<div style="display:flex;align-items:flex-start;gap:10px">' +
             '<div style="flex:1;min-width:0">' +
-              '<p style="color:rgba(255,255,255,.82);font-size:14px;font-style:italic;line-height:1.6">' + esc(td.aiResponse.hint) + '</p>' +
-              '<p style="color:rgba(255,255,255,.4);font-size:12px;margin-top:6px">Tomorrow’s full plan ready.</p>' +
+              '<p style="color:rgba(var(--fg),.82);font-size:14px;font-style:italic;line-height:1.6">' + esc(td.aiResponse.hint) + '</p>' +
+              '<p style="color:rgba(var(--fg),.4);font-size:12px;margin-top:6px">Tomorrow’s full plan ready.</p>' +
             '</div>' +
-            '<button id="coach-hint-dismiss" class="icbtn" aria-label="Dismiss" title="Dismiss" style="width:18px;height:18px;flex-shrink:0;color:rgba(255,255,255,.35)">' +
+            '<button id="coach-hint-dismiss" class="icbtn" aria-label="Dismiss" title="Dismiss" style="width:18px;height:18px;flex-shrink:0;color:rgba(var(--fg),.35)">' +
               '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
             '</button>' +
           '</div>';
@@ -818,39 +869,39 @@
         var coachStale = td.submitted === true && !td.aiResponse && td.sealedAt &&
           (new Date() - new Date(td.sealedAt)) > 90000;
         if (coachStale) {
-          teaserHTML = '<p style="color:rgba(255,255,255,.6);font-size:14px;line-height:1.5;margin-bottom:10px">The coach didn’t finish — try again.</p>' +
-            '<button id="coach-teaser-retry" class="tap97" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.8);font-size:13px;font-weight:500;padding:8px 16px;border-radius:.6rem">Try again</button>';
+          teaserHTML = '<p style="color:rgba(var(--fg),.6);font-size:14px;line-height:1.5;margin-bottom:10px">The coach didn’t finish — try again.</p>' +
+            '<button id="coach-teaser-retry" class="tap97" style="background:rgba(var(--fg),.06);border:1px solid rgba(var(--fg),.12);color:rgba(var(--fg),.8);font-size:13px;font-weight:500;padding:8px 16px;border-radius:.6rem">Try again</button>';
         } else {
-          teaserHTML = '<p style="color:rgba(255,255,255,.5);font-size:14px;font-style:italic">Coach is thinking…</p>';
+          teaserHTML = '<p style="color:rgba(var(--fg),.5);font-size:14px;font-style:italic">Coach is thinking…</p>';
         }
       }
       eodHTML =
         '<div class="glass" style="border-radius:1.5rem;padding:24px 22px;margin-bottom:32px">' +
-          '<div style="display:flex;align-items:center;gap:7px;margin-bottom:18px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' +
-            '<p style="color:rgba(52,211,153,.85);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em">Day Sealed</p>' +
+          '<div style="display:flex;align-items:center;gap:7px;margin-bottom:18px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color:var(--ac-hex)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' +
+            '<p style="color:rgba(var(--ac),.85);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em">Day Sealed</p>' +
           '</div>' +
           sealedAnswer('What went well', refl.wentWell) +
           sealedAnswer('What was hard', refl.wasHard) +
           sealedAnswer('Different tomorrow', refl.wantDifferent) +
-          '<div id="coach-teaser" style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)">' + teaserHTML + '</div>' +
+          '<div id="coach-teaser" style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(var(--fg),.08)">' + teaserHTML + '</div>' +
         '</div>';
     } else {
       var eodField = function(id, label) {
         return '<div>' +
-          '<label for="' + id + '" style="display:block;color:rgba(255,255,255,.7);font-size:13px;font-weight:500;margin-bottom:8px">' + label + '</label>' +
+          '<label for="' + id + '" style="display:block;color:rgba(var(--fg),.7);font-size:13px;font-weight:500;margin-bottom:8px">' + label + '</label>' +
           '<textarea id="' + id + '" class="m-inp" placeholder="' + label + '" style="min-height:80px;resize:vertical;line-height:1.5;font-family:inherit"></textarea>' +
         '</div>';
       };
       eodHTML =
         '<div class="glass" style="border-radius:1.5rem;padding:24px 22px;margin-bottom:32px">' +
-          '<p style="color:rgba(255,255,255,.34);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-bottom:20px">End of Day</p>' +
+          '<p style="color:rgba(var(--fg),.34);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-bottom:20px">End of Day</p>' +
           '<div style="display:flex;flex-direction:column;gap:16px;margin-bottom:18px">' +
             eodField('eod-well', 'What went well today?') +
             eodField('eod-hard', 'What was hard?') +
             eodField('eod-diff', 'Anything you want different tomorrow?') +
           '</div>' +
-          '<p style="color:rgba(255,255,255,.34);font-size:12px;line-height:1.5;margin-bottom:12px">Once you submit, today’s check-ins lock until tomorrow.</p>' +
-          '<button id="seal-btn" class="tap97" style="width:100%;background:rgba(16,185,129,.15);border:1px solid rgba(52,211,153,.18);color:#34d399;font-size:16px;font-weight:600;padding:16px;border-radius:1rem">Submit &amp; seal day</button>' +
+          '<p style="color:rgba(var(--fg),.34);font-size:12px;line-height:1.5;margin-bottom:12px">Once you submit, today’s check-ins lock until tomorrow.</p>' +
+          '<button id="seal-btn" class="tap97" style="width:100%;background:rgba(var(--ac2),.15);border:1px solid rgba(var(--ac),.18);color:var(--ac-hex);font-size:16px;font-weight:600;padding:16px;border-radius:1rem">Submit &amp; seal day</button>' +
         '</div>';
     }
 
@@ -859,13 +910,13 @@
     if (s.devMode) {
       devArrow =
         '<button id="dev-advance" class="tap95" aria-label="Advance one day" title="Advance one day" ' +
-          'style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:.5rem;color:rgba(255,255,255,.5);flex-shrink:0">' +
+          'style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:.5rem;color:rgba(var(--fg),.5);flex-shrink:0">' +
           '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>' +
         '</button>';
       if (s.dateOverride) {
         var realToday = todayISO(), probe = realToday, devAhead = 0, guard = 0;
         while (probe < s.dateOverride && guard < 4000) { probe = dateAdd(probe, 1); devAhead++; guard++; }
-        devIndicator = '<span style="color:rgba(255,255,255,.5);font-size:12px;font-style:italic">(dev: +' + devAhead + ' days)</span>';
+        devIndicator = '<span style="color:rgba(var(--fg),.5);font-size:12px;font-style:italic">(dev: +' + devAhead + ' days)</span>';
       }
     }
 
@@ -873,17 +924,17 @@
     view.innerHTML =
       '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:20px">' +
         '<div style="display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:wrap">' +
-          '<h1 style="color:rgba(255,255,255,.95);font-size:21px;font-weight:600;line-height:1.25">' + longDate(TODAY) + '</h1>' +
+          '<h1 style="color:rgba(var(--fg),.95);font-size:21px;font-weight:600;line-height:1.25">' + longDate(TODAY) + '</h1>' +
           devArrow + devIndicator +
         '</div>' +
         '<div style="display:flex;align-items:center;gap:7px;flex-shrink:0">' +
           '<span style="font-size:18px;line-height:1" aria-hidden="true">🔥</span>' +
-          '<span id="snum" style="color:#34d399;font-size:22px;font-weight:700;font-variant-numeric:tabular-nums">' + streakN + '</span>' +
+          '<span id="snum" style="color:var(--ac-hex);font-size:22px;font-weight:700;font-variant-numeric:tabular-nums">' + streakN + '</span>' +
         '</div>' +
       '</div>' +
       planHTML +
       '<div class="glass" style="border-radius:1.25rem;padding:14px 20px;margin-bottom:20px">' +
-        '<p style="color:rgba(255,255,255,.44);font-style:italic;font-size:14px;line-height:1.65">' + line + '</p>' +
+        '<p style="color:rgba(var(--fg),.44);font-style:italic;font-size:14px;line-height:1.65">' + line + '</p>' +
       '</div>' +
       yHTML +
       '<div class="noscroll" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;margin-bottom:20px">' +
@@ -1077,8 +1128,8 @@
 
     function statTile(numHTML, label) {
       return '<div class="glass" style="padding:18px 12px;border-radius:1.25rem;text-align:center">' +
-        '<div style="color:rgba(255,255,255,.95);font-size:26px;font-weight:700;line-height:1;margin-bottom:6px;font-variant-numeric:tabular-nums">' + numHTML + '</div>' +
-        '<div style="color:rgba(255,255,255,.42);font-size:11px;font-weight:500;letter-spacing:.01em">' + label + '</div>' +
+        '<div style="color:rgba(var(--fg),.95);font-size:26px;font-weight:700;line-height:1;margin-bottom:6px;font-variant-numeric:tabular-nums">' + numHTML + '</div>' +
+        '<div style="color:rgba(var(--fg),.42);font-size:11px;font-weight:500;letter-spacing:.01em">' + label + '</div>' +
       '</div>';
     }
 
@@ -1106,7 +1157,7 @@
     function calRing(r) {
       var col = ratioColor(r), rad = 8, circ = 2 * Math.PI * rad, off = (1 - r) * circ;
       return '<svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" style="display:block;margin:3px auto 0">' +
-        '<circle cx="11" cy="11" r="8" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="2.5"/>' +
+        '<circle cx="11" cy="11" r="8" fill="none" stroke="rgba(150,150,150,.28)" stroke-width="2.5"/>' +
         '<circle cx="11" cy="11" r="8" fill="none" stroke="' + col + '" stroke-width="2.5" stroke-linecap="round"' +
         ' stroke-dasharray="' + circ.toFixed(2) + ' ' + circ.toFixed(2) + '"' +
         ' stroke-dashoffset="' + off.toFixed(2) + '" transform="rotate(-90 11 11)"/></svg>';
@@ -1119,7 +1170,7 @@
     var totalCells = Math.ceil((startDow + dim) / 7) * 7;
 
     var headCells = WD.map(function(w) {
-      return '<div style="text-align:center;font-size:11px;font-weight:600;color:rgba(255,255,255,.32);padding:4px 0">' + w + '</div>';
+      return '<div style="text-align:center;font-size:11px;font-weight:600;color:rgba(var(--fg),.32);padding:4px 0">' + w + '</div>';
     }).join('');
 
     var cells = '';
@@ -1129,19 +1180,19 @@
       var iso = dY + '-' + pad(dM + 1) + '-' + pad(dD);
       var inMonth = (dM === cm);
       if (!inMonth) {
-        cells += '<div style="opacity:.3;min-height:56px;border-radius:.6rem;padding:5px 7px;border:1px solid rgba(255,255,255,.03)">' +
-          '<div style="font-size:11px;color:rgba(255,255,255,.5)">' + dD + '</div></div>';
+        cells += '<div style="opacity:.3;min-height:56px;border-radius:.6rem;padding:5px 7px;border:1px solid rgba(var(--fg),.03)">' +
+          '<div style="font-size:11px;color:rgba(var(--fg),.5)">' + dD + '</div></div>';
         continue;
       }
       var isToday = (iso === TODAY);
       var isFuture = (iso > TODAY);
       var ratio = isFuture ? null : dayRatio(iso);
       var hasData = ratio !== null;
-      var border = isToday ? 'border:1px solid rgba(52,211,153,.6);' : 'border:1px solid rgba(255,255,255,.05);';
+      var border = isToday ? 'border:1px solid rgba(var(--ac),.6);' : 'border:1px solid rgba(var(--fg),.05);';
       var ringHTML = hasData ? calRing(ratio) : '';
       var open = hasData ? '<div data-cal-date="' + iso + '" style="cursor:pointer;' : '<div style="';
-      cells += open + border + 'min-height:56px;border-radius:.6rem;padding:5px 7px;background:rgba(255,255,255,.02)">' +
-        '<div style="font-size:11px;font-weight:600;color:' + (isToday ? '#34d399' : 'rgba(255,255,255,.7)') + '">' + dD + '</div>' +
+      cells += open + border + 'min-height:56px;border-radius:.6rem;padding:5px 7px;background:rgba(var(--fg),.02)">' +
+        '<div style="font-size:11px;font-weight:600;color:' + (isToday ? 'var(--ac-hex)' : 'rgba(var(--fg),.7)') + '">' + dD + '</div>' +
         ringHTML +
       '</div>';
     }
@@ -1151,14 +1202,14 @@
 
     var noSealedEver = Object.keys(days).filter(function(k) { return days[k] && days[k].submitted; }).length === 0;
     var calEmpty = noSealedEver
-      ? '<p style="text-align:center;color:rgba(255,255,255,.4);font-size:13px;line-height:1.6;margin-top:14px">Your sealed days will show up here.</p>'
+      ? '<p style="text-align:center;color:rgba(var(--fg),.4);font-size:13px;line-height:1.6;margin-top:14px">Your sealed days will show up here.</p>'
       : '';
 
     var calHTML =
       '<div class="glass" style="border-radius:1.25rem;padding:18px 16px;margin-bottom:32px">' +
         '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">' +
           '<button data-cal-nav="-1" class="icbtn" aria-label="Previous month">' + chevL + '</button>' +
-          '<span style="color:rgba(255,255,255,.9);font-size:15px;font-weight:600">' + MONTHS[cm] + ' ' + cy + '</span>' +
+          '<span style="color:rgba(var(--fg),.9);font-size:15px;font-weight:600">' + MONTHS[cm] + ' ' + cy + '</span>' +
           '<button data-cal-nav="1" class="icbtn" aria-label="Next month">' + chevR + '</button>' +
         '</div>' +
         '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px">' + headCells + '</div>' +
@@ -1167,7 +1218,7 @@
       '</div>';
 
     document.getElementById('view-progress').innerHTML =
-      '<h2 style="color:rgba(255,255,255,.9);font-size:20px;font-weight:600;margin-bottom:20px">Progress</h2>' +
+      '<h2 style="color:rgba(var(--fg),.9);font-size:20px;font-weight:600;margin-bottom:20px">Progress</h2>' +
       statsHTML + calHTML;
   }
 
@@ -1227,7 +1278,7 @@
 
   /* shared modal label style */
   function mlabel(text) {
-    return '<p style="color:rgba(255,255,255,.38);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">' + text + '</p>';
+    return '<p style="color:rgba(var(--fg),.38);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">' + text + '</p>';
   }
 
   /* ── Add Habit modal ─────────────────────────────────────────────────────── */
@@ -1240,7 +1291,7 @@
     }).join('');
 
     openModal(
-      '<h3 style="color:rgba(255,255,255,.9);font-size:17px;font-weight:600;margin-bottom:22px">Add habit</h3>' +
+      '<h3 style="color:rgba(var(--fg),.9);font-size:17px;font-weight:600;margin-bottom:22px">Add habit</h3>' +
       '<div style="margin-bottom:16px">' + mlabel('Name') +
         '<input id="m-hab-name" class="m-inp" type="text" placeholder="e.g. Drink water" autocomplete="off">' +
       '</div>' +
@@ -1248,8 +1299,8 @@
         '<select id="m-hab-cat" class="m-inp m-sel"' + (lockCat ? ' disabled' : '') + '>' + opts + '</select>' +
       '</div>' +
       '<div style="display:flex;gap:10px">' +
-        '<button id="m-cancel" class="tap97" style="flex:1;padding:13px;border-radius:.875rem;color:rgba(255,255,255,.5);font-size:15px;font-weight:500;border:1px solid rgba(255,255,255,.1)">Cancel</button>' +
-        '<button id="m-submit" class="tap97" style="flex:2;padding:13px;border-radius:.875rem;background:rgba(16,185,129,.15);border:1px solid rgba(52,211,153,.2);color:#34d399;font-size:15px;font-weight:600">Add</button>' +
+        '<button id="m-cancel" class="tap97" style="flex:1;padding:13px;border-radius:.875rem;color:rgba(var(--fg),.5);font-size:15px;font-weight:500;border:1px solid rgba(var(--fg),.1)">Cancel</button>' +
+        '<button id="m-submit" class="tap97" style="flex:2;padding:13px;border-radius:.875rem;background:rgba(var(--ac2),.15);border:1px solid rgba(var(--ac),.2);color:var(--ac-hex);font-size:15px;font-weight:600">Add</button>' +
       '</div>'
     );
 
@@ -1274,13 +1325,13 @@
   /* ── Add Category modal ──────────────────────────────────────────────────── */
   function openAddCategoryModal() {
     openModal(
-      '<h3 style="color:rgba(255,255,255,.9);font-size:17px;font-weight:600;margin-bottom:22px">Add category</h3>' +
+      '<h3 style="color:rgba(var(--fg),.9);font-size:17px;font-weight:600;margin-bottom:22px">Add category</h3>' +
       '<div style="margin-bottom:24px">' + mlabel('Name') +
         '<input id="m-cat-name" class="m-inp" type="text" placeholder="e.g. Fitness" autocomplete="off">' +
       '</div>' +
       '<div style="display:flex;gap:10px">' +
-        '<button id="m-cancel" class="tap97" style="flex:1;padding:13px;border-radius:.875rem;color:rgba(255,255,255,.5);font-size:15px;font-weight:500;border:1px solid rgba(255,255,255,.1)">Cancel</button>' +
-        '<button id="m-submit" class="tap97" style="flex:2;padding:13px;border-radius:.875rem;background:rgba(16,185,129,.15);border:1px solid rgba(52,211,153,.2);color:#34d399;font-size:15px;font-weight:600">Add</button>' +
+        '<button id="m-cancel" class="tap97" style="flex:1;padding:13px;border-radius:.875rem;color:rgba(var(--fg),.5);font-size:15px;font-weight:500;border:1px solid rgba(var(--fg),.1)">Cancel</button>' +
+        '<button id="m-submit" class="tap97" style="flex:2;padding:13px;border-radius:.875rem;background:rgba(var(--ac2),.15);border:1px solid rgba(var(--ac),.2);color:var(--ac-hex);font-size:15px;font-weight:600">Add</button>' +
       '</div>'
     );
 
@@ -1317,11 +1368,11 @@
     if (!hab) return;
 
     openModal(
-      '<h3 style="color:rgba(255,255,255,.9);font-size:17px;font-weight:600;margin-bottom:10px">Delete habit?</h3>' +
-      '<p style="color:rgba(255,255,255,.55);font-size:14px;line-height:1.55;margin-bottom:6px">"' + esc(hab.name) + '"</p>' +
+      '<h3 style="color:rgba(var(--fg),.9);font-size:17px;font-weight:600;margin-bottom:10px">Delete habit?</h3>' +
+      '<p style="color:rgba(var(--fg),.55);font-size:14px;line-height:1.55;margin-bottom:6px">"' + esc(hab.name) + '"</p>' +
       '<p style="color:rgba(251,113,133,.7);font-size:13px;margin-bottom:24px">This can\'t be undone.</p>' +
       '<div style="display:flex;gap:10px">' +
-        '<button id="m-cancel" class="tap97" style="flex:1;padding:13px;border-radius:.875rem;color:rgba(255,255,255,.5);font-size:15px;font-weight:500;border:1px solid rgba(255,255,255,.1)">Cancel</button>' +
+        '<button id="m-cancel" class="tap97" style="flex:1;padding:13px;border-radius:.875rem;color:rgba(var(--fg),.5);font-size:15px;font-weight:500;border:1px solid rgba(var(--fg),.1)">Cancel</button>' +
         '<button id="m-delete" class="tap97" style="flex:1;padding:13px;border-radius:.875rem;background:rgba(251,113,133,.12);border:1px solid rgba(251,113,133,.22);color:#fb7185;font-size:15px;font-weight:600">Delete</button>' +
       '</div>'
     );
@@ -1342,9 +1393,9 @@
 
     if (cats.length <= 1) {
       openModal(
-        '<h3 style="color:rgba(255,255,255,.9);font-size:17px;font-weight:600;margin-bottom:10px">Can\'t delete</h3>' +
-        '<p style="color:rgba(255,255,255,.55);font-size:14px;line-height:1.55;margin-bottom:24px">You must have at least one category.</p>' +
-        '<button id="m-ok" class="tap97" style="width:100%;padding:13px;border-radius:.875rem;background:rgba(16,185,129,.15);border:1px solid rgba(52,211,153,.2);color:#34d399;font-size:15px;font-weight:600">OK</button>'
+        '<h3 style="color:rgba(var(--fg),.9);font-size:17px;font-weight:600;margin-bottom:10px">Can\'t delete</h3>' +
+        '<p style="color:rgba(var(--fg),.55);font-size:14px;line-height:1.55;margin-bottom:24px">You must have at least one category.</p>' +
+        '<button id="m-ok" class="tap97" style="width:100%;padding:13px;border-radius:.875rem;background:rgba(var(--ac2),.15);border:1px solid rgba(var(--ac),.2);color:var(--ac-hex);font-size:15px;font-weight:600">OK</button>'
       );
       document.getElementById('m-ok').addEventListener('click', closeModal);
       return;
@@ -1359,11 +1410,11 @@
       : '';
 
     openModal(
-      '<h3 style="color:rgba(255,255,255,.9);font-size:17px;font-weight:600;margin-bottom:10px">Delete "' + esc(cat.name) + '"?</h3>' +
-      (bodyTxt ? '<p style="color:rgba(255,255,255,.55);font-size:14px;line-height:1.55;margin-bottom:6px">' + bodyTxt + '</p>' : '') +
+      '<h3 style="color:rgba(var(--fg),.9);font-size:17px;font-weight:600;margin-bottom:10px">Delete "' + esc(cat.name) + '"?</h3>' +
+      (bodyTxt ? '<p style="color:rgba(var(--fg),.55);font-size:14px;line-height:1.55;margin-bottom:6px">' + bodyTxt + '</p>' : '') +
       '<p style="color:rgba(251,113,133,.7);font-size:13px;margin-bottom:24px">This can\'t be undone.</p>' +
       '<div style="display:flex;gap:10px">' +
-        '<button id="m-cancel" class="tap97" style="flex:1;padding:13px;border-radius:.875rem;color:rgba(255,255,255,.5);font-size:15px;font-weight:500;border:1px solid rgba(255,255,255,.1)">Cancel</button>' +
+        '<button id="m-cancel" class="tap97" style="flex:1;padding:13px;border-radius:.875rem;color:rgba(var(--fg),.5);font-size:15px;font-weight:500;border:1px solid rgba(var(--fg),.1)">Cancel</button>' +
         '<button id="m-delete" class="tap97" style="flex:1;padding:13px;border-radius:.875rem;background:rgba(251,113,133,.12);border:1px solid rgba(251,113,133,.22);color:#fb7185;font-size:15px;font-weight:600">Delete</button>' +
       '</div>'
     );
@@ -1503,7 +1554,7 @@
       '" style="display:flex;align-items:center;gap:8px;padding:12px 14px;border-radius:1rem;margin-bottom:6px">' +
       '<span class="dh">' + IC.drag + '</span>' +
       '<span data-action="hab-name" data-hab-id="' + hab.id +
-        '" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:rgba(255,255,255,.82);font-size:14px;cursor:text">' +
+        '" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:rgba(var(--fg),.82);font-size:14px;cursor:text">' +
         esc(hab.name) + '</span>' +
       '<button data-action="hab-up"   data-hab-id="' + hab.id + '" class="icbtn"' + (isFirst ? ' disabled' : '') + '>' + IC.chevUp + '</button>' +
       '<button data-action="hab-down" data-hab-id="' + hab.id + '" class="icbtn"' + (isLast  ? ' disabled' : '') + '>' + IC.chevDn + '</button>' +
@@ -1513,14 +1564,14 @@
 
   function catSectionHTML(cat, catHabs, isFirst, isLast) {
     var header =
-      '<div class="glass" style="display:flex;align-items:center;gap:6px;padding:10px 14px;border-radius:.875rem;margin-bottom:8px;background:rgba(255,255,255,.04)!important">' +
+      '<div class="glass" style="display:flex;align-items:center;gap:6px;padding:10px 14px;border-radius:.875rem;margin-bottom:8px;background:rgba(var(--fg),.04)!important">' +
         '<div style="width:10px;height:10px;border-radius:50%;background:' + cat.color + ';flex-shrink:0"></div>' +
         '<span data-action="cat-name" data-cat-id="' + cat.id +
-          '" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:rgba(255,255,255,.82);font-size:14px;font-weight:500;cursor:text">' +
+          '" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:rgba(var(--fg),.82);font-size:14px;font-weight:500;cursor:text">' +
           esc(cat.name) + '</span>' +
         '<button data-action="cat-up"   data-cat-id="' + cat.id + '" class="icbtn"' + (isFirst ? ' disabled' : '') + ' title="Move category up">' + IC.chevUp + '</button>' +
         '<button data-action="cat-down" data-cat-id="' + cat.id + '" class="icbtn"' + (isLast  ? ' disabled' : '') + ' title="Move category down">' + IC.chevDn + '</button>' +
-        '<div style="width:1px;height:14px;background:rgba(255,255,255,.1);margin:0 2px;flex-shrink:0"></div>' +
+        '<div style="width:1px;height:14px;background:rgba(var(--fg),.1);margin:0 2px;flex-shrink:0"></div>' +
         '<button data-action="cat-rename"    data-cat-id="' + cat.id + '" class="icbtn em"   title="Rename">' + IC.pencil + '</button>' +
         '<button data-action="cat-del"       data-cat-id="' + cat.id + '" class="icbtn rose" title="Delete category">' + IC.trash + '</button>' +
         '<button data-action="cat-add-habit" data-cat-id="' + cat.id + '" class="icbtn em"   title="Add habit">' + IC.plus + '</button>' +
@@ -1545,8 +1596,8 @@
 
     var topStrip =
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">' +
-        '<h2 style="color:rgba(255,255,255,.9);font-size:20px;font-weight:600">Habits</h2>' +
-        '<button data-action="add-habit" class="tap97" style="display:flex;align-items:center;gap:6px;background:rgba(16,185,129,.12);border:1px solid rgba(52,211,153,.2);color:#34d399;font-size:13px;font-weight:600;padding:8px 16px;border-radius:9999px">' +
+        '<h2 style="color:rgba(var(--fg),.9);font-size:20px;font-weight:600">Habits</h2>' +
+        '<button data-action="add-habit" class="tap97" style="display:flex;align-items:center;gap:6px;background:rgba(var(--ac2),.12);border:1px solid rgba(var(--ac),.2);color:var(--ac-hex);font-size:13px;font-weight:600;padding:8px 16px;border-radius:9999px">' +
           IC.plus + 'Add Habit' +
         '</button>' +
       '</div>';
@@ -1557,7 +1608,7 @@
          top strip; just offer a gentle nudge instead of empty category shells. */
       sections =
         '<div style="text-align:center;padding:48px 16px 40px">' +
-          '<p style="color:rgba(255,255,255,.4);font-size:14px;line-height:1.6">Add your first habit to get started.</p>' +
+          '<p style="color:rgba(var(--fg),.4);font-size:14px;line-height:1.6">Add your first habit to get started.</p>' +
         '</div>';
     } else {
       sections = cats.map(function(cat, ci) {
@@ -1708,29 +1759,37 @@
       var devExtra = '';
       if (devOn) {
         var resetBtn = s.dateOverride
-          ? '<button id="hf-reset-today" class="tap97" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.8);font-size:14px;font-weight:500;padding:11px;border-radius:.75rem">Reset to real today</button>'
+          ? '<button id="hf-reset-today" class="tap97" style="width:100%;background:rgba(var(--fg),.06);border:1px solid rgba(var(--fg),.12);color:rgba(var(--fg),.8);font-size:14px;font-weight:500;padding:11px;border-radius:.75rem">Reset to real today</button>'
           : '';
         devExtra =
-          '<p style="color:rgba(255,255,255,.4);font-size:12px;line-height:1.5;margin:10px 0 14px">Use the arrow on the Today view to advance one day forward at a time.</p>' +
+          '<p style="color:rgba(var(--fg),.4);font-size:12px;line-height:1.5;margin:10px 0 14px">Use the arrow on the Today view to advance one day forward at a time.</p>' +
           resetBtn;
       }
 
       var html =
-        '<h3 style="color:rgba(255,255,255,.92);font-size:17px;font-weight:600;margin-bottom:18px">Settings</h3>' +
+        '<h3 style="color:rgba(var(--fg),.92);font-size:17px;font-weight:600;margin-bottom:18px">Settings</h3>' +
         mlabel('Anthropic API Key') +
         '<input id="hf-apikey" type="password" class="m-inp" placeholder="sk-ant-..." autocomplete="off" value="' + esc(s.apiKey || '') + '">' +
-        '<p style="color:rgba(255,255,255,.4);font-size:12px;line-height:1.5;margin:10px 0 20px">Your key stays in this browser. Get one at console.anthropic.com.</p>' +
+        '<p style="color:rgba(var(--fg),.4);font-size:12px;line-height:1.5;margin:10px 0 20px">Your key stays in this browser. Get one at console.anthropic.com.</p>' +
         '<p id="hf-key-warn" class="text-rose-300" style="font-size:12px;line-height:1.5;margin:-12px 0 16px"></p>' +
-        '<button id="hf-save-key" class="tap97" style="width:100%;background:rgba(16,185,129,.15);border:1px solid rgba(52,211,153,.2);color:#34d399;font-size:15px;font-weight:600;padding:13px;border-radius:.875rem">Save</button>' +
-        '<div style="height:1px;background:rgba(255,255,255,.08);margin:22px 0"></div>' +
+        '<button id="hf-save-key" class="tap97" style="width:100%;background:rgba(var(--ac2),.15);border:1px solid rgba(var(--ac),.2);color:var(--ac-hex);font-size:15px;font-weight:600;padding:13px;border-radius:.875rem">Save</button>' +
+        '<div style="height:1px;background:rgba(var(--fg),.08);margin:22px 0"></div>' +
+        mlabel('Appearance') +
+        '<div class="seg" id="hf-theme-seg">' +
+          '<button class="seg-btn tap97' + ((s.theme || 'dark') === 'light'  ? ' on' : '') + '" data-theme-opt="light">Light</button>' +
+          '<button class="seg-btn tap97' + ((s.theme || 'dark') === 'dark'   ? ' on' : '') + '" data-theme-opt="dark">Dark</button>' +
+          '<button class="seg-btn tap97' + ((s.theme || 'dark') === 'system' ? ' on' : '') + '" data-theme-opt="system">System</button>' +
+        '</div>' +
+        '<p style="color:rgba(var(--fg),.4);font-size:12px;line-height:1.5;margin:10px 0 20px">System follows your device’s appearance.</p>' +
+        '<div style="height:1px;background:rgba(var(--fg),.08);margin:22px 0"></div>' +
         mlabel('Dev mode') +
         '<label style="display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer">' +
-          '<span style="color:rgba(255,255,255,.82);font-size:15px">Enable dev mode</span>' +
+          '<span style="color:rgba(var(--fg),.82);font-size:15px">Enable dev mode</span>' +
           '<span class="hf-switch"><input type="checkbox" id="hf-devmode"' + (devOn ? ' checked' : '') + '><span class="sl"></span></span>' +
         '</label>' +
         '<div id="hf-dev-extra">' + devExtra + '</div>' +
-        '<div style="height:1px;background:rgba(255,255,255,.08);margin:22px 0 14px"></div>' +
-        '<p style="color:rgba(255,255,255,.3);font-size:12px;text-align:center">Habit Flow v' + APP_VERSION + ' · Updated ' + fmtMonthDayYear(APP_UPDATED) + '</p>';
+        '<div style="height:1px;background:rgba(var(--fg),.08);margin:22px 0 14px"></div>' +
+        '<p style="color:rgba(var(--fg),.3);font-size:12px;text-align:center">Habit Flow v' + APP_VERSION + ' · Updated ' + fmtMonthDayYear(APP_UPDATED) + '</p>';
 
       var modal = document.getElementById('hf-modal');
       var overlay = document.getElementById('hf-overlay');
@@ -1753,6 +1812,17 @@
           return;
         }
         closeModal();
+      });
+
+      var seg = document.getElementById('hf-theme-seg');
+      if (seg) seg.addEventListener('click', function(e) {
+        var btn = e.target.closest('[data-theme-opt]');
+        if (!btn) return;
+        var s2 = persistKeyField(getSettings());
+        s2.theme = btn.getAttribute('data-theme-opt');
+        lsSet('hf.settings', s2);
+        applyTheme();
+        paint();
       });
 
       var tog = document.getElementById('hf-devmode');
@@ -1798,38 +1868,38 @@
       function blk(label, val) {
         if (!val) return '';
         return '<div style="margin-bottom:12px">' +
-          '<p style="color:rgba(255,255,255,.4);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">' + label + '</p>' +
-          '<p style="color:rgba(255,255,255,.7);font-size:14px;font-style:italic;line-height:1.5">' + esc(val) + '</p></div>';
+          '<p style="color:rgba(var(--fg),.4);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">' + label + '</p>' +
+          '<p style="color:rgba(var(--fg),.7);font-size:14px;font-style:italic;line-height:1.5">' + esc(val) + '</p></div>';
       }
-      return '<div style="margin-bottom:18px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.07)">' +
+      return '<div style="margin-bottom:18px;padding-bottom:8px;border-bottom:1px solid rgba(var(--fg),.07)">' +
         blk('What went well', r.wentWell) + blk('What was hard', r.wasHard) + blk('Different tomorrow', r.wantDifferent) +
       '</div>';
     }
     function rowsHTML() {
-      if (!existing.length) return '<p style="color:rgba(255,255,255,.4);font-size:13px;text-align:center;padding:14px 0">No habits tracked this day.</p>';
+      if (!existing.length) return '<p style="color:rgba(var(--fg),.4);font-size:13px;text-align:center;padding:14px 0">No habits tracked this day.</p>';
       return existing.map(function(h) {
         var done = work[h.id];
         var cat = catMap[h.categoryId];
         var dot = cat ? '<div style="width:7px;height:7px;border-radius:50%;background:' + cat.color + ';flex-shrink:0"></div>' : '';
         var check = done
-          ? '<div style="width:20px;height:20px;border-radius:50%;background:#10b981;border:2px solid #10b981;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + checkSVG() + '</div>'
-          : '<div style="width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.2);flex-shrink:0"></div>';
+          ? '<div style="width:20px;height:20px;border-radius:50%;background:var(--ac2-hex);border:2px solid var(--ac2-hex);display:flex;align-items:center;justify-content:center;flex-shrink:0">' + checkSVG() + '</div>'
+          : '<div style="width:20px;height:20px;border-radius:50%;border:2px solid rgba(var(--fg),.2);flex-shrink:0"></div>';
         var open = editMode ? '<div data-dd-toggle="' + h.id + '" style="cursor:pointer;' : '<div style="';
-        return open + 'display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:.75rem;background:rgba(255,255,255,.03);margin-bottom:6px' + (done && !editMode ? ';opacity:.72' : '') + '">' +
+        return open + 'display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:.75rem;background:rgba(var(--fg),.03);margin-bottom:6px' + (done && !editMode ? ';opacity:.72' : '') + '">' +
           check + dot +
-          '<span style="color:rgba(255,255,255,.8);font-size:13px' + (done ? ';text-decoration:line-through;text-decoration-color:rgba(255,255,255,.25)' : '') + '">' + esc(h.name) + '</span>' +
+          '<span style="color:rgba(var(--fg),.8);font-size:13px' + (done ? ';text-decoration:line-through;text-decoration-color:rgba(var(--fg),.25)' : '') + '">' + esc(h.name) + '</span>' +
         '</div>';
       }).join('');
     }
     function paint() {
       var html =
         '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:16px">' +
-          '<h3 style="color:rgba(255,255,255,.92);font-size:16px;font-weight:600;line-height:1.3">' + fullDate(date) + '</h3>' +
+          '<h3 style="color:rgba(var(--fg),.92);font-size:16px;font-weight:600;line-height:1.3">' + fullDate(date) + '</h3>' +
           (editMode ? '' : '<button id="dd-edit" class="icbtn em" title="Edit day" style="flex-shrink:0">' + IC.pencil + '</button>') +
         '</div>' +
         reflectionHTML() +
         '<div>' + rowsHTML() + '</div>' +
-        (editMode ? '<button id="dd-save" class="tap97" style="width:100%;margin-top:16px;background:rgba(16,185,129,.15);border:1px solid rgba(52,211,153,.2);color:#34d399;font-size:15px;font-weight:600;padding:13px;border-radius:.875rem">Save changes</button>' : '');
+        (editMode ? '<button id="dd-save" class="tap97" style="width:100%;margin-top:16px;background:rgba(var(--ac2),.15);border:1px solid rgba(var(--ac),.2);color:var(--ac-hex);font-size:15px;font-weight:600;padding:13px;border-radius:.875rem">Save changes</button>' : '');
       var modal = document.getElementById('hf-modal');
       var overlay = document.getElementById('hf-overlay');
       if (!modal || overlay.classList.contains('hidden')) {
@@ -2009,14 +2079,14 @@ Constraints:
     if (t) t.innerHTML = html;
   }
   function coachRetry(msg) {
-    coachTeaser('<p style="color:rgba(255,255,255,.6);font-size:14px;line-height:1.5;margin-bottom:10px">' + msg + '</p>' +
-      '<button id="coach-retry" class="tap97" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.8);font-size:13px;font-weight:500;padding:8px 16px;border-radius:.6rem">Try again</button>');
+    coachTeaser('<p style="color:rgba(var(--fg),.6);font-size:14px;line-height:1.5;margin-bottom:10px">' + msg + '</p>' +
+      '<button id="coach-retry" class="tap97" style="background:rgba(var(--fg),.06);border:1px solid rgba(var(--fg),.12);color:rgba(var(--fg),.8);font-size:13px;font-weight:500;padding:8px 16px;border-radius:.6rem">Try again</button>');
     var b = document.getElementById('coach-retry');
     if (b) b.addEventListener('click', runCoach);
   }
   function coachHint(hint) {
-    coachTeaser('<p style="color:rgba(255,255,255,.82);font-size:14px;font-style:italic;line-height:1.6">' + esc(hint) + '</p>' +
-      '<p style="color:rgba(255,255,255,.4);font-size:12px;margin-top:6px">Tomorrow’s full plan ready.</p>');
+    coachTeaser('<p style="color:rgba(var(--fg),.82);font-size:14px;font-style:italic;line-height:1.6">' + esc(hint) + '</p>' +
+      '<p style="color:rgba(var(--fg),.4);font-size:12px;margin-top:6px">Tomorrow’s full plan ready.</p>');
   }
 
   function runCoach() {
@@ -2026,18 +2096,18 @@ Constraints:
     var TODAY = getToday();
 
     if (!habits.length) {
-      coachTeaser('<p style="color:rgba(255,255,255,.6);font-size:14px;line-height:1.5">Add some habits first; the coach needs something to work with.</p>');
+      coachTeaser('<p style="color:rgba(var(--fg),.6);font-size:14px;line-height:1.5">Add some habits first; the coach needs something to work with.</p>');
       return;
     }
     if (!key) {
-      coachTeaser('<p style="color:rgba(255,255,255,.6);font-size:14px;line-height:1.5">Set your API key in Settings to get coach suggestions. ' +
-        '<button id="coach-open-settings" style="color:#34d399;font-weight:600;text-decoration:underline">Open Settings</button></p>');
+      coachTeaser('<p style="color:rgba(var(--fg),.6);font-size:14px;line-height:1.5">Set your API key in Settings to get coach suggestions. ' +
+        '<button id="coach-open-settings" style="color:var(--ac-hex);font-weight:600;text-decoration:underline">Open Settings</button></p>');
       var os = document.getElementById('coach-open-settings');
       if (os) os.addEventListener('click', openSettingsModal);
       return;
     }
 
-    coachTeaser('<p style="color:rgba(255,255,255,.5);font-size:14px;font-style:italic">Coach is thinking…</p>');
+    coachTeaser('<p style="color:rgba(var(--fg),.5);font-size:14px;font-style:italic">Coach is thinking…</p>');
 
     fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -2181,6 +2251,25 @@ Constraints:
     renderToday();
   });
 
+  /* ── Theme (light / dark / system) ──────────────────────────────────────── */
+  function effectiveTheme(mode) {
+    if (mode === 'light' || mode === 'dark') return mode;
+    return (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+  }
+  function applyTheme() {
+    var eff = effectiveTheme((getSettings().theme) || 'dark');
+    document.documentElement.setAttribute('data-theme', eff);
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', eff === 'light' ? '#f6f7f9' : '#0a0a0a');
+  }
+  /* Follow the OS only while the user's choice is System. */
+  if (window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function() {
+      if (((getSettings().theme) || 'dark') === 'system') applyTheme();
+    });
+  }
+
+  applyTheme();
   pruneDrafts();
   renderTabs();
   showView();
