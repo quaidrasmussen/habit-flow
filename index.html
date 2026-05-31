@@ -1,3 +1,4 @@
+<!-- BUILD STATE: Phase 5 of 5 complete -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -240,6 +241,7 @@
 <body>
   <div class="glow-a" aria-hidden="true"></div>
   <div class="glow-b" aria-hidden="true"></div>
+  <button id="hf-gear" aria-label="Settings" class="tap95" style="position:fixed;top:max(14px,env(safe-area-inset-top));right:16px;z-index:50;width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(255,255,255,.06);backdrop-filter:blur(20px) saturate(140%);-webkit-backdrop-filter:blur(20px) saturate(140%);border:1px solid rgba(255,255,255,.1);box-shadow:0 4px 16px rgba(0,0,0,.3);color:rgba(255,255,255,.55)"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
 
   <!-- Desktop top tab bar -->
   <nav class="hidden md:block fixed top-0 inset-x-0 z-40 tbar" style="border-bottom:1px solid rgba(255,255,255,.07)">
@@ -569,12 +571,36 @@
     var streakN = s.overallStreak || 0;
     var line = LINES[dayOfYear(TODAY) % 30];
 
+    var yday = d[YESTERDAY];
+    var planHTML = '';
+    if (yday && yday.aiResponse && yday.aiResponse.suggestions) {
+      var hasUnhandled = yday.aiResponse.suggestions.some(function(s) { return !s.applied && !s.skipped; });
+      if (hasUnhandled) {
+        var subCards = yday.aiResponse.suggestions.map(function(s, idx) {
+          if (s.applied || s.skipped) return '';
+          return '<div class="glass" style="border-radius:1rem;padding:16px 18px;margin-bottom:10px;background:rgba(255,255,255,.03)">' +
+            '<p style="color:rgba(255,255,255,.92);font-size:15px;font-weight:600;margin-bottom:6px">' + esc(s.title || '') + '</p>' +
+            '<p style="color:rgba(255,255,255,.75);font-size:13px;line-height:1.5;margin-bottom:6px">' + esc(s.why || '') + '</p>' +
+            '<p style="color:rgba(255,255,255,.55);font-size:12px;font-style:italic;line-height:1.5;margin-bottom:12px">' + esc(s.impact_prediction || '') + '</p>' +
+            '<div style="display:flex;gap:8px">' +
+              '<button data-plan-apply="' + idx + '" class="tap97" style="flex:1;background:rgba(16,185,129,.15);border:1px solid rgba(52,211,153,.2);color:#34d399;font-size:13px;font-weight:600;padding:9px;border-radius:.6rem">Apply</button>' +
+              '<button data-plan-skip="' + idx + '" class="tap97" style="flex:1;background:transparent;border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.5);font-size:13px;font-weight:500;padding:9px;border-radius:.6rem">Skip for today</button>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+        planHTML =
+          '<div class="glass" style="border-radius:1.25rem;padding:18px;margin-bottom:20px">' +
+            '<p style="color:rgba(52,211,153,.8);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px">Coach’s plan from yesterday</p>' +
+            subCards +
+          '</div>';
+      }
+    }
+
     var yd = d[YESTERDAY];
     var yHTML = '';
     if (yd && yd.submitted) {
       var yc    = yd.completions || {};
       var yDone = h.filter(function(x) { return yc[x.id]; }).length;
-      var yMood = yd.mood != null ? yd.mood : '—';
       var best  = null, bestR = -1;
       cats.forEach(function(cat) {
         var ch = h.filter(function(x) { return x.categoryId === cat.id; });
@@ -588,8 +614,6 @@
           '<p style="color:rgba(255,255,255,.36);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px">Yesterday</p>' +
           '<p style="color:rgba(255,255,255,.78);font-size:14px;line-height:1.6">' +
             yDone + '/' + h.length + ' habits' +
-            ' <span style="color:rgba(255,255,255,.22)">•</span> ' +
-            'Mood ' + yMood +
             ' <span style="color:rgba(255,255,255,.22)">•</span> ' +
             'Strongest: ' + (best ? best.name : '—') +
             ' <span style="color:rgba(255,255,255,.22)">•</span> ' +
@@ -611,9 +635,56 @@
     var sm = s.sortMode || 'category';
     var habitsHTML = buildHabits(h, cats, catMap, comps, sm);
 
-    var ev = td.energy != null ? td.energy : 5;
-    var fv = td.focus  != null ? td.focus  : 5;
-    var mv = td.mood   != null ? td.mood   : 5;
+    var sealed  = td.submitted === true;
+    var refl    = td.reflection || {};
+    var lockIco = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+    var lockHTML = sealed
+      ? '<div style="display:inline-flex;align-items:center;gap:6px;color:rgba(52,211,153,.8);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">' + lockIco + '<span>Check-ins sealed</span></div>'
+      : '';
+    var eodHTML;
+    if (sealed) {
+      var sealedAnswer = function(label, val) {
+        return '<div style="margin-bottom:14px">' +
+          '<p style="color:rgba(255,255,255,.4);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">' + label + '</p>' +
+          '<p style="color:rgba(255,255,255,.72);font-size:14px;font-style:italic;line-height:1.55">' + (val ? esc(val) : '—') + '</p>' +
+        '</div>';
+      };
+      var teaserHTML;
+      if (td.aiResponse && td.aiResponse.hint) {
+        teaserHTML = '<p style="color:rgba(255,255,255,.82);font-size:14px;font-style:italic;line-height:1.6">' + esc(td.aiResponse.hint) + '</p>' +
+          '<p style="color:rgba(255,255,255,.4);font-size:12px;margin-top:6px">Tomorrow’s full plan ready.</p>';
+      } else {
+        teaserHTML = '<p style="color:rgba(255,255,255,.5);font-size:14px;font-style:italic">Coach is thinking…</p>';
+      }
+      eodHTML =
+        '<div class="glass" style="border-radius:1.5rem;padding:24px 22px;margin-bottom:32px">' +
+          '<div style="display:flex;align-items:center;gap:7px;margin-bottom:18px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' +
+            '<p style="color:rgba(52,211,153,.85);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em">Day Sealed</p>' +
+          '</div>' +
+          sealedAnswer('What went well', refl.wentWell) +
+          sealedAnswer('What was hard', refl.wasHard) +
+          sealedAnswer('Different tomorrow', refl.wantDifferent) +
+          '<div id="coach-teaser" style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)">' + teaserHTML + '</div>' +
+        '</div>';
+    } else {
+      var eodField = function(id, label) {
+        return '<div>' +
+          '<label for="' + id + '" style="display:block;color:rgba(255,255,255,.7);font-size:13px;font-weight:500;margin-bottom:8px">' + label + '</label>' +
+          '<textarea id="' + id + '" class="m-inp" placeholder="' + label + '" style="min-height:80px;resize:vertical;line-height:1.5;font-family:inherit"></textarea>' +
+        '</div>';
+      };
+      eodHTML =
+        '<div class="glass" style="border-radius:1.5rem;padding:24px 22px;margin-bottom:32px">' +
+          '<p style="color:rgba(255,255,255,.34);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-bottom:20px">End of Day</p>' +
+          '<div style="display:flex;flex-direction:column;gap:16px;margin-bottom:18px">' +
+            eodField('eod-well', 'What went well today?') +
+            eodField('eod-hard', 'What was hard?') +
+            eodField('eod-diff', 'Anything you want different tomorrow?') +
+          '</div>' +
+          '<p style="color:rgba(255,255,255,.34);font-size:12px;line-height:1.5;margin-bottom:12px">Once you submit, today’s check-ins lock until tomorrow.</p>' +
+          '<button id="seal-btn" class="tap97" style="width:100%;background:rgba(16,185,129,.15);border:1px solid rgba(52,211,153,.18);color:#34d399;font-size:16px;font-weight:600;padding:16px;border-radius:1rem">Submit &amp; seal day</button>' +
+        '</div>';
+    }
 
     var view = document.getElementById('view-today');
     view.innerHTML =
@@ -624,6 +695,7 @@
           '<span id="snum" style="color:#34d399;font-size:22px;font-weight:700;font-variant-numeric:tabular-nums">' + streakN + '</span>' +
         '</div>' +
       '</div>' +
+      planHTML +
       '<div class="glass" style="border-radius:1.25rem;padding:14px 20px;margin-bottom:20px">' +
         '<p style="color:rgba(255,255,255,.44);font-style:italic;font-size:14px;line-height:1.65">' + line + '</p>' +
       '</div>' +
@@ -635,17 +707,8 @@
         sortBtn('category', 'By category', sm) +
         sortBtn('order', 'Chronological', sm) +
       '</div>' +
-      '<div id="hlist" style="margin-bottom:24px">' + habitsHTML + '</div>' +
-      '<div class="glass" style="border-radius:1.5rem;padding:24px 22px;margin-bottom:32px">' +
-        '<p style="color:rgba(255,255,255,.34);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-bottom:22px">Night Reflection</p>' +
-        '<div style="display:flex;flex-direction:column;gap:22px;margin-bottom:24px">' +
-          sliderRow('energy', 'Energy', ev) +
-          sliderRow('focus',  'Focus',  fv) +
-          sliderRow('mood',   'Mood',   mv) +
-        '</div>' +
-        '<button id="sub-btn" class="tap97" style="width:100%;background:rgba(16,185,129,.15);border:1px solid rgba(52,211,153,.18);color:#34d399;font-size:16px;font-weight:600;padding:16px;border-radius:1rem;">Submit Day</button>' +
-        '<div id="cmsg" style="height:22px;margin-top:12px;text-align:center;font-size:13px;font-weight:500;color:#34d399"></div>' +
-      '</div>';
+      lockHTML + '<div id="hlist" style="margin-bottom:24px">' + habitsHTML + '</div>' +
+      eodHTML;
 
     view.querySelectorAll('.sort-btn').forEach(function(b) {
       b.addEventListener('click', function() {
@@ -656,54 +719,43 @@
       });
     });
 
-    ['energy', 'focus', 'mood'].forEach(function(k) {
-      var sl = document.getElementById(k + '-sl');
-      var vl = document.getElementById(k + '-vl');
-      if (sl && vl) sl.addEventListener('input', function() { vl.textContent = sl.value; });
-    });
-
-    document.getElementById('sub-btn').addEventListener('click', handleSubmit);
+    var sealBtn = document.getElementById('seal-btn');
+    if (sealBtn) sealBtn.addEventListener('click', sealDay);
   }
 
   /* ── Submit Day ──────────────────────────────────────────────────────────── */
-  function handleSubmit() {
-    var ev = parseInt(document.getElementById('energy-sl').value, 10);
-    var fv = parseInt(document.getElementById('focus-sl').value,  10);
-    var mv = parseInt(document.getElementById('mood-sl').value,   10);
+  function sealDay() {
+    var wellEl = document.getElementById('eod-well');
+    var hardEl = document.getElementById('eod-hard');
+    var diffEl = document.getElementById('eod-diff');
+    if (!wellEl || !hardEl || !diffEl) return;
+
+    var reflection = {
+      wentWell:      (wellEl.value || '').trim(),
+      wasHard:       (hardEl.value || '').trim(),
+      wantDifferent: (diffEl.value || '').trim()
+    };
 
     var d = getDays();
     var comps = (d[TODAY] && d[TODAY].completions) ? d[TODAY].completions : {};
-    d[TODAY] = { completions: comps, energy: ev, focus: fv, mood: mv, submitted: true };
+    d[TODAY] = {
+      completions: comps,
+      reflection: reflection,
+      submitted: true,
+      sealedAt: new Date().toISOString()
+    };
     lsSet('hf.days', d);
 
-    var r  = computeStreaks();
-    var s  = getSettings();
-    s.overallStreak  = r.overall;
-    s.longestStreak  = r.longest;
+    var r = computeStreaks();
+    var s = getSettings();
+    s.overallStreak   = r.overall;
+    s.longestStreak   = r.longest;
     s.categoryStreaks = r.catStreaks;
     lsSet('hf.settings', s);
 
     renderToday();
 
-    var h    = getHabits();
-    var done = h.filter(function(x) { return comps[x.id]; }).length;
-    var msg  = done === h.length
-      ? 'All ' + h.length + ' habits done — streak: ' + r.overall
-      : done >= 3
-        ? done + '/' + h.length + ' habits — streak ' + r.overall
-        : done + '/' + h.length + ' habits — keep going';
-
-    var el = document.getElementById('cmsg');
-    if (el) {
-      el.textContent = msg;
-      el.classList.remove('cfade');
-      void el.offsetWidth;
-      el.classList.add('cfade');
-      setTimeout(function() {
-        var e = document.getElementById('cmsg');
-        if (e) { e.textContent = ''; e.classList.remove('cfade'); }
-      }, 2100);
-    }
+    if (typeof runCoach === 'function') runCoach();
   }
 
   /* ── Habit toggle (Today view delegation) ────────────────────────────────── */
@@ -715,6 +767,7 @@
 
     var hid = btn.dataset.hid;
     var d = getDays();
+    if (d[TODAY] && d[TODAY].submitted) return;
     if (!d[TODAY]) d[TODAY] = { completions: {}, submitted: false };
     if (!d[TODAY].completions) d[TODAY].completions = {};
 
@@ -754,18 +807,17 @@
     var catMap = {};
     cats.forEach(function(c) { catMap[c.id] = c; });
 
-    /* 7-day window: [oldest (6 days ago) … today] */
+    /* 7-day window for completion rate */
     var win7 = [];
     for (var i = 6; i >= 0; i--) win7.push(dateAdd(TODAY, -i));
 
-    /* ── Section 1: Headline stats ─────────────────────────────────────────── */
+    /* ── Headline stats ── */
     var curStreak  = s.overallStreak || 0;
     var lngStreak  = s.longestStreak || 0;
     var daysLogged = Object.keys(days).filter(function(k) {
       return days[k] && days[k].submitted;
     }).length;
 
-    /* 7-day completion rate */
     var num7 = 0, den7 = 0;
     win7.forEach(function(date) {
       var day = days[date];
@@ -796,111 +848,79 @@
         statTile(rate7, '7-day rate') +
       '</div>';
 
-    /* ── Section 2: Heatmap ────────────────────────────────────────────────── */
-    var WLETTERS = 'SMTWTFS';
+    /* ── Calendar ── */
+    var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    var WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
-    var dayHeaderCells = win7.map(function(date) {
-      var p  = date.split('-').map(Number);
-      var wd = new Date(p[0], p[1] - 1, p[2]).getDay();
-      var isToday = (date === TODAY);
-      return '<div style="text-align:center;font-size:11px;font-weight:600;color:' +
-        (isToday ? '#34d399' : 'rgba(255,255,255,.28)') + '">' + WLETTERS[wd] + '</div>';
+    function dayRatio(date) {
+      var day = days[date];
+      if (!day || !day.submitted) return null;
+      var ex = habits.filter(function(h) { var cc = (h.createdAt || '').slice(0,10); return !cc || cc <= date; });
+      if (!ex.length) return 0;
+      var done = ex.filter(function(h) { return (day.completions || {})[h.id]; }).length;
+      return done / ex.length;
+    }
+    function ratioColor(r) { return r >= 0.75 ? '#34d399' : r >= 0.40 ? '#38bdf8' : '#fb7185'; }
+    function calRing(r) {
+      var col = ratioColor(r), rad = 8, circ = 2 * Math.PI * rad, off = (1 - r) * circ;
+      return '<svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" style="display:block;margin:3px auto 0">' +
+        '<circle cx="11" cy="11" r="8" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="2.5"/>' +
+        '<circle cx="11" cy="11" r="8" fill="none" stroke="' + col + '" stroke-width="2.5" stroke-linecap="round"' +
+        ' stroke-dasharray="' + circ.toFixed(2) + ' ' + circ.toFixed(2) + '"' +
+        ' stroke-dashoffset="' + off.toFixed(2) + '" transform="rotate(-90 11 11)"/></svg>';
+    }
+
+    var cy = calMonth.y, cm = calMonth.m;
+    var first = new Date(cy, cm, 1);
+    var startDow = first.getDay();
+    var dim = new Date(cy, cm + 1, 0).getDate();
+    var totalCells = Math.ceil((startDow + dim) / 7) * 7;
+
+    var headCells = WD.map(function(w) {
+      return '<div style="text-align:center;font-size:11px;font-weight:600;color:rgba(255,255,255,.32);padding:4px 0">' + w + '</div>';
     }).join('');
 
-    var dayHeader =
-      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">' +
-        '<div style="width:108px;flex-shrink:0"></div>' +
-        '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;flex:1">' + dayHeaderCells + '</div>' +
-      '</div>';
-
-    var heatRows = habits.length === 0
-      ? '<div style="text-align:center;padding:28px 0;color:rgba(255,255,255,.3);font-size:13px">Add some habits to see your progress.</div>'
-      : habits.map(function(hab) {
-          var cells = win7.map(function(date) {
-            var day     = days[date];
-            var created = (hab.createdAt || '').slice(0, 10);
-            var existed = !created || created <= date;
-
-            /* Priority 1 & 2: not yet existing or day not submitted */
-            if (!existed || !day || !day.submitted) {
-              return '<div style="aspect-ratio:1;min-height:28px;border-radius:5px;border:1px dashed rgba(255,255,255,.1)"></div>';
-            }
-            /* Priority 3: completed → category color + glow */
-            if ((day.completions || {})[hab.id]) {
-              var color = (catMap[hab.categoryId] || {}).color || '#34d399';
-              return '<div style="aspect-ratio:1;min-height:28px;border-radius:5px;background:' + color +
-                ';box-shadow:0 0 8px ' + hexToRgba(color, 0.3) + '"></div>';
-            }
-            /* Priority 4: submitted but not completed */
-            return '<div style="aspect-ratio:1;min-height:28px;border-radius:5px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06)"></div>';
-          }).join('');
-
-          return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">' +
-            '<div style="width:108px;flex-shrink:0;font-size:12px;color:rgba(255,255,255,.56);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(hab.name) + '</div>' +
-            '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;flex:1">' + cells + '</div>' +
-          '</div>';
-        }).join('');
-
-    var heatmapHTML =
-      '<div class="glass" style="border-radius:1.25rem;padding:20px;margin-bottom:20px">' +
-        '<p style="color:rgba(255,255,255,.32);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px">7-day heatmap</p>' +
-        dayHeader + heatRows +
-      '</div>';
-
-    /* ── Section 3: Trend tiles ────────────────────────────────────────────── */
-    function computeTrend(metric) {
-      var sub = win7.filter(function(date) {
-        var day = days[date];
-        return day && day.submitted && day[metric] != null;
-      });
-      if (!sub.length) return { type: 'none' };
-      if (sub.length === 1) return { type: 'one', value: days[sub[0]][metric] };
-      var latest   = sub[sub.length - 1];
-      var earliest = sub[0];
-      var ep = earliest.split('-').map(Number);
-      return {
-        type:        'full',
-        value:       days[latest][metric],
-        delta:       days[latest][metric] - days[earliest][metric],
-        earlyLetter: WLETTERS[new Date(ep[0], ep[1] - 1, ep[2]).getDay()]
-      };
-    }
-
-    function trendTile(label, metric) {
-      var t = computeTrend(metric);
-      var inner;
-      if (t.type === 'none') {
-        inner = '<p style="color:rgba(255,255,255,.3);font-size:13px;line-height:1.5;margin-top:4px">Submit a day to log this</p>';
-      } else if (t.type === 'one') {
-        inner =
-          '<p style="color:rgba(255,255,255,.95);font-size:36px;font-weight:700;line-height:1;margin-bottom:8px">' + t.value + '</p>' +
-          '<p style="color:rgba(255,255,255,.3);font-size:12px;line-height:1.4">Need more days to see trends</p>';
-      } else {
-        var dc, ds;
-        if      (t.delta > 0) { dc = '#34d399'; ds = '↑ +' + t.delta + ' since ' + t.earlyLetter; }
-        else if (t.delta < 0) { dc = '#fb7185'; ds = '↓ '  + t.delta + ' since ' + t.earlyLetter; }
-        else                  { dc = 'rgba(255,255,255,.48)'; ds = '→ same since ' + t.earlyLetter; }
-        inner =
-          '<p style="color:rgba(255,255,255,.95);font-size:36px;font-weight:700;line-height:1;margin-bottom:8px">' + t.value + '</p>' +
-          '<p style="font-size:13px;color:' + dc + '">' + ds + '</p>';
+    var cells = '';
+    for (var ci = 0; ci < totalCells; ci++) {
+      var cd = new Date(cy, cm, 1 - startDow + ci);
+      var dY = cd.getFullYear(), dM = cd.getMonth(), dD = cd.getDate();
+      var iso = dY + '-' + pad(dM + 1) + '-' + pad(dD);
+      var inMonth = (dM === cm);
+      if (!inMonth) {
+        cells += '<div style="opacity:.3;min-height:56px;border-radius:.6rem;padding:5px 7px;border:1px solid rgba(255,255,255,.03)">' +
+          '<div style="font-size:11px;color:rgba(255,255,255,.5)">' + dD + '</div></div>';
+        continue;
       }
-      return '<div class="glass" style="padding:20px;border-radius:1.25rem">' +
-        '<p style="color:rgba(255,255,255,.55);font-size:13px;font-weight:500;margin-bottom:10px">' + label + '</p>' +
-        inner +
+      var isToday = (iso === TODAY);
+      var isFuture = (iso > TODAY);
+      var ratio = isFuture ? null : dayRatio(iso);
+      var hasData = ratio !== null;
+      var border = isToday ? 'border:1px solid rgba(52,211,153,.6);' : 'border:1px solid rgba(255,255,255,.05);';
+      var ringHTML = hasData ? calRing(ratio) : '';
+      var open = hasData ? '<div data-cal-date="' + iso + '" style="cursor:pointer;' : '<div style="';
+      cells += open + border + 'min-height:56px;border-radius:.6rem;padding:5px 7px;background:rgba(255,255,255,.02)">' +
+        '<div style="font-size:11px;font-weight:600;color:' + (isToday ? '#34d399' : 'rgba(255,255,255,.7)') + '">' + dD + '</div>' +
+        ringHTML +
       '</div>';
     }
 
-    var trendsHTML =
-      '<p style="color:rgba(255,255,255,.32);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px">Reflections — last 7 days</p>' +
-      '<div class="trend-grid-3" style="margin-bottom:32px">' +
-        trendTile('Energy', 'energy') +
-        trendTile('Focus',  'focus')  +
-        trendTile('Mood',   'mood')   +
+    var chevL = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>';
+    var chevR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>';
+
+    var calHTML =
+      '<div class="glass" style="border-radius:1.25rem;padding:18px 16px;margin-bottom:32px">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">' +
+          '<button data-cal-nav="-1" class="icbtn" aria-label="Previous month">' + chevL + '</button>' +
+          '<span style="color:rgba(255,255,255,.9);font-size:15px;font-weight:600">' + MONTHS[cm] + ' ' + cy + '</span>' +
+          '<button data-cal-nav="1" class="icbtn" aria-label="Next month">' + chevR + '</button>' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px">' + headCells + '</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">' + cells + '</div>' +
       '</div>';
 
     document.getElementById('view-progress').innerHTML =
       '<h2 style="color:rgba(255,255,255,.9);font-size:20px;font-weight:600;margin-bottom:20px">Progress</h2>' +
-      statsHTML + heatmapHTML + trendsHTML;
+      statsHTML + calHTML;
   }
 
   /* ════════════════════════════════════════════
@@ -1402,6 +1422,362 @@
   document.getElementById('hf-overlay').addEventListener('click', closeModal);
 
   /* ── Bootstrap ───────────────────────────────────────────────────────────── */
+  /* ── Calendar month state ──────────────────────────────────────────────── */
+  var calMonth = (function() { var p = TODAY.split('-').map(Number); return { y: p[0], m: p[1] - 1 }; })();
+
+  /* ── Settings modal (API key) ──────────────────────────────────────────── */
+  function openSettingsModal() {
+    var s = getSettings();
+    openModal(
+      '<h3 style="color:rgba(255,255,255,.92);font-size:17px;font-weight:600;margin-bottom:18px">Settings</h3>' +
+      mlabel('Anthropic API Key') +
+      '<input id="hf-apikey" type="password" class="m-inp" placeholder="sk-ant-..." autocomplete="off" value="' + esc(s.apiKey || '') + '">' +
+      '<p style="color:rgba(255,255,255,.4);font-size:12px;line-height:1.5;margin:10px 0 20px">Your key stays in this browser. Get one at console.anthropic.com.</p>' +
+      '<button id="hf-save-key" class="tap97" style="width:100%;background:rgba(16,185,129,.15);border:1px solid rgba(52,211,153,.2);color:#34d399;font-size:15px;font-weight:600;padding:13px;border-radius:.875rem">Save</button>'
+    );
+    document.getElementById('hf-save-key').addEventListener('click', function() {
+      var s2 = getSettings();
+      s2.apiKey = (document.getElementById('hf-apikey').value || '').trim();
+      lsSet('hf.settings', s2);
+      closeModal();
+    });
+  }
+
+  /* ── Day Detail modal ──────────────────────────────────────────────────── */
+  function openDayDetail(date) {
+    var days   = getDays();
+    var day    = days[date] || {};
+    var habits = getHabits();
+    var cats   = getCats();
+    var catMap = {}; cats.forEach(function(c) { catMap[c.id] = c; });
+    var existing = habits.filter(function(h) { var cc = (h.createdAt || '').slice(0,10); return !cc || cc <= date; });
+    var work = {}; existing.forEach(function(h) { work[h.id] = !!(day.completions || {})[h.id]; });
+    var editMode = false;
+
+    function fullDate(iso) {
+      var p = iso.split('-').map(Number);
+      return new Date(p[0], p[1] - 1, p[2]).toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+    }
+    function reflectionHTML() {
+      var r = day.reflection;
+      if (!r) return '';
+      function blk(label, val) {
+        if (!val) return '';
+        return '<div style="margin-bottom:12px">' +
+          '<p style="color:rgba(255,255,255,.4);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">' + label + '</p>' +
+          '<p style="color:rgba(255,255,255,.7);font-size:14px;font-style:italic;line-height:1.5">' + esc(val) + '</p></div>';
+      }
+      return '<div style="margin-bottom:18px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.07)">' +
+        blk('What went well', r.wentWell) + blk('What was hard', r.wasHard) + blk('Different tomorrow', r.wantDifferent) +
+      '</div>';
+    }
+    function rowsHTML() {
+      if (!existing.length) return '<p style="color:rgba(255,255,255,.4);font-size:13px;text-align:center;padding:14px 0">No habits tracked this day.</p>';
+      return existing.map(function(h) {
+        var done = work[h.id];
+        var cat = catMap[h.categoryId];
+        var dot = cat ? '<div style="width:7px;height:7px;border-radius:50%;background:' + cat.color + ';flex-shrink:0"></div>' : '';
+        var check = done
+          ? '<div style="width:20px;height:20px;border-radius:50%;background:#10b981;border:2px solid #10b981;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + checkSVG() + '</div>'
+          : '<div style="width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.2);flex-shrink:0"></div>';
+        var open = editMode ? '<div data-dd-toggle="' + h.id + '" style="cursor:pointer;' : '<div style="';
+        return open + 'display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:.75rem;background:rgba(255,255,255,.03);margin-bottom:6px' + (done && !editMode ? ';opacity:.72' : '') + '">' +
+          check + dot +
+          '<span style="color:rgba(255,255,255,.8);font-size:13px' + (done ? ';text-decoration:line-through;text-decoration-color:rgba(255,255,255,.25)' : '') + '">' + esc(h.name) + '</span>' +
+        '</div>';
+      }).join('');
+    }
+    function paint() {
+      var html =
+        '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:16px">' +
+          '<h3 style="color:rgba(255,255,255,.92);font-size:16px;font-weight:600;line-height:1.3">' + fullDate(date) + '</h3>' +
+          (editMode ? '' : '<button id="dd-edit" class="icbtn em" title="Edit day" style="flex-shrink:0">' + IC.pencil + '</button>') +
+        '</div>' +
+        reflectionHTML() +
+        '<div>' + rowsHTML() + '</div>' +
+        (editMode ? '<button id="dd-save" class="tap97" style="width:100%;margin-top:16px;background:rgba(16,185,129,.15);border:1px solid rgba(52,211,153,.2);color:#34d399;font-size:15px;font-weight:600;padding:13px;border-radius:.875rem">Save changes</button>' : '');
+      var modal = document.getElementById('hf-modal');
+      var overlay = document.getElementById('hf-overlay');
+      if (!modal || overlay.classList.contains('hidden')) {
+        openModal(html);
+        modal = document.getElementById('hf-modal');
+      } else {
+        modal.innerHTML = html;
+      }
+      var ed = document.getElementById('dd-edit');
+      if (ed) ed.addEventListener('click', function() { editMode = true; paint(); });
+      var sv = document.getElementById('dd-save');
+      if (sv) sv.addEventListener('click', function() {
+        var d = getDays();
+        if (!d[date]) d[date] = { submitted: true };
+        d[date].completions = Object.assign({}, d[date].completions || {}, work);
+        lsSet('hf.days', d);
+        var r = computeStreaks();
+        var s = getSettings();
+        s.overallStreak = r.overall;
+        s.longestStreak = r.longest;
+        s.categoryStreaks = r.catStreaks;
+        lsSet('hf.settings', s);
+        closeModal();
+        renderProgressView();
+      });
+      if (modal) modal.querySelectorAll('[data-dd-toggle]').forEach(function(el) {
+        el.addEventListener('click', function() {
+          var id = el.getAttribute('data-dd-toggle');
+          work[id] = !work[id];
+          paint();
+        });
+      });
+    }
+    paint();
+  }
+
+  /* ── Progress view click delegation (calendar) ─────────────────────────── */
+  document.addEventListener('click', function(e) {
+    var pv = document.getElementById('view-progress');
+    if (!pv || pv.classList.contains('hidden')) return;
+    var nav = e.target.closest('[data-cal-nav]');
+    if (nav && pv.contains(nav)) {
+      var delta = parseInt(nav.getAttribute('data-cal-nav'), 10);
+      calMonth.m += delta;
+      if (calMonth.m < 0)  { calMonth.m = 11; calMonth.y--; }
+      if (calMonth.m > 11) { calMonth.m = 0;  calMonth.y++; }
+      renderProgressView();
+      return;
+    }
+    var cell = e.target.closest('[data-cal-date]');
+    if (cell && pv.contains(cell)) { openDayDetail(cell.getAttribute('data-cal-date')); }
+  });
+
+  /* ── Settings gear ─────────────────────────────────────────────────────── */
+  document.getElementById('hf-gear').addEventListener('click', openSettingsModal);
+
+  /* ── AI Coach ──────────────────────────────────────────────────────────── */
+  var COACH_SYSTEM = `You are a wise, exacting coach with deep expertise in behavior change, habit formation, exercise physiology, nutrition, sleep science, and applied psychology. Your role is to read a user's habit regimen, their daily reflection, and their recent compliance history, then propose exactly 2 specific changes designed to maximize their long-term wellbeing and capability.
+
+Principles:
+- Calibrate intensity to compliance. If they're keeping up with prior suggestions, push harder. If they're slipping, ease back and rebuild momentum. Stay challenging — never coast.
+- Favor changes with the highest probabilistic long-term impact. Sleep quality, daily movement, focused work, deliberate practice, social connection, and meaning generally outweigh micro-optimizations.
+- Never modify category groupings. Habits can be added, removed, tweaked, or condensed within existing categories only.
+- Each change must be specific, actionable, and small enough to start tomorrow.
+- Each change must include a 'why' grounded in evidence — name the mechanism.
+- Tone: clear, direct, warm. No flattery. No hedging. No toxic positivity. Treat the user as a capable adult.
+
+Output ONLY valid JSON matching this schema (no markdown fences, no prose outside the JSON):
+{
+  "compliance_read": "keeping_pace" | "slowing_down" | "steady" | "new_user",
+  "hint": "<one teaser sentence, max 15 words, shown immediately after their reflection>",
+  "suggestions": [
+    {
+      "action": "add" | "tweak" | "remove" | "condense",
+      "target_habit_id": "<existing habit id, or null if action is add>",
+      "absorbed_habit_ids": ["<ids removed when condensing>"],
+      "modification": {
+        "name": "<the new or updated habit name, or null if action is remove>",
+        "categoryId": "<existing category id, required for add and tweak and condense>"
+      },
+      "title": "<short title for this change, e.g. 'Shrink deep work to 25 minutes'>",
+      "why": "<1-2 sentences explaining the reasoning, grounded in evidence>",
+      "impact_prediction": "<what the user should notice if they apply this for a week>"
+    }
+  ]
+}
+
+Constraints:
+- Exactly 2 suggestions, no more, no less.
+- For 'remove': set modification to null, absorbed_habit_ids to [].
+- For 'add': set target_habit_id and absorbed_habit_ids to null/[]; modification.categoryId must reference an existing category.
+- For 'tweak': set absorbed_habit_ids to []; keep categoryId same as the target habit's current category.
+- For 'condense': target_habit_id is the surviving habit; absorbed_habit_ids lists habits that will be deleted; modification.name is the new combined name; categoryId stays the same as target's.`;
+
+  function stripFences(t) {
+    t = (t || '').trim();
+    if (t.indexOf('```') === 0) {
+      t = t.replace(/^```[a-zA-Z]*\s*/, '').replace(/```$/, '').trim();
+    }
+    return t;
+  }
+
+  function buildCoachPayload() {
+    var habits = getHabits();
+    var cats   = getCats();
+    var days   = getDays();
+
+    var currentHabits = habits.map(function(h) { return { id: h.id, name: h.name, categoryId: h.categoryId }; });
+    var currentCategories = cats.map(function(c) { return { id: c.id, name: c.name }; });
+
+    var last7 = [];
+    for (var i = 6; i >= 0; i--) {
+      var date = dateAdd(TODAY, -i);
+      var day = days[date];
+      last7.push({ date: date, submitted: !!(day && day.submitted), completions: (day && day.completions) || {} });
+    }
+
+    /* Compliance: last 4 days that actually have AI suggestions (Phase 5 plumbing) */
+    var withAI = Object.keys(days).filter(function(k) {
+      return days[k] && days[k].aiResponse && days[k].aiResponse.suggestions && days[k].aiResponse.suggestions.length;
+    }).sort();
+    withAI = withAI.slice(-4);
+    var compliance = withAI.map(function(date) {
+      return {
+        date: date,
+        suggestions: days[date].aiResponse.suggestions.map(function(s) {
+          return { title: s.title, action: s.action, applied: !!s.applied, skipped: !!s.skipped };
+        })
+      };
+    });
+
+    var tr = (days[TODAY] && days[TODAY].reflection) ? days[TODAY].reflection : { wentWell: '', wasHard: '', wantDifferent: '' };
+
+    return JSON.stringify({
+      currentHabits: currentHabits,
+      currentCategories: currentCategories,
+      last7DaysCompletions: last7,
+      last4DaysSuggestionsCompliance: compliance,
+      todayReflection: tr
+    });
+  }
+
+  function coachTeaser(html) {
+    var t = document.getElementById('coach-teaser');
+    if (t) t.innerHTML = html;
+  }
+  function coachRetry(msg) {
+    coachTeaser('<p style="color:rgba(255,255,255,.6);font-size:14px;line-height:1.5;margin-bottom:10px">' + msg + '</p>' +
+      '<button id="coach-retry" class="tap97" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.8);font-size:13px;font-weight:500;padding:8px 16px;border-radius:.6rem">Try again</button>');
+    var b = document.getElementById('coach-retry');
+    if (b) b.addEventListener('click', runCoach);
+  }
+  function coachHint(hint) {
+    coachTeaser('<p style="color:rgba(255,255,255,.82);font-size:14px;font-style:italic;line-height:1.6">' + esc(hint) + '</p>' +
+      '<p style="color:rgba(255,255,255,.4);font-size:12px;margin-top:6px">Tomorrow’s full plan ready.</p>');
+  }
+
+  function runCoach() {
+    var habits = getHabits();
+    var s = getSettings();
+    var key = (s.apiKey || '').trim();
+
+    if (!habits.length) {
+      coachTeaser('<p style="color:rgba(255,255,255,.6);font-size:14px;line-height:1.5">Add some habits first; the coach needs something to work with.</p>');
+      return;
+    }
+    if (!key) {
+      coachTeaser('<p style="color:rgba(255,255,255,.6);font-size:14px;line-height:1.5">Set your API key in Settings to get coach suggestions. ' +
+        '<button id="coach-open-settings" style="color:#34d399;font-weight:600;text-decoration:underline">Open Settings</button></p>');
+      var os = document.getElementById('coach-open-settings');
+      if (os) os.addEventListener('click', openSettingsModal);
+      return;
+    }
+
+    coachTeaser('<p style="color:rgba(255,255,255,.5);font-size:14px;font-style:italic">Coach is thinking…</p>');
+
+    fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 1500,
+        system: COACH_SYSTEM,
+        messages: [{ role: 'user', content: buildCoachPayload() }]
+      })
+    }).then(function(resp) {
+      if (!resp.ok) {
+        return resp.text().then(function(t) {
+          var msg;
+          try { var j = JSON.parse(t); msg = (j.error && j.error.message) ? j.error.message : ('HTTP ' + resp.status); }
+          catch (e) { msg = 'HTTP ' + resp.status; }
+          coachRetry(esc(msg));
+          return null;
+        });
+      }
+      return resp.json();
+    }).then(function(data) {
+      if (!data) return;
+      var text = '';
+      if (data.content && data.content.length) {
+        data.content.forEach(function(b) { if (b.type === 'text') text += b.text; });
+      }
+      var parsed;
+      try { parsed = JSON.parse(stripFences(text)); }
+      catch (e) { coachRetry('Coach response unreadable — try again.'); return; }
+      if (!parsed || !Array.isArray(parsed.suggestions)) {
+        coachRetry('Coach response unreadable — try again.');
+        return;
+      }
+      var sugg = parsed.suggestions.map(function(x) { x.applied = false; x.skipped = false; return x; });
+      var d = getDays();
+      if (!d[TODAY]) d[TODAY] = { completions: {}, submitted: true };
+      d[TODAY].aiResponse = {
+        hint: parsed.hint || '',
+        compliance_read: parsed.compliance_read || '',
+        suggestions: sugg,
+        generatedAt: new Date().toISOString()
+      };
+      lsSet('hf.days', d);
+      coachHint(parsed.hint || '');
+    }).catch(function() {
+      coachRetry('Couldn’t reach the coach. Try again.');
+    });
+  }
+
+  /* ── Apply / skip coach suggestions (morning plan) ─────────────────────── */
+  function applySuggestion(sug) {
+    var habits = getHabits();
+    var mod = sug.modification || {};
+    if (sug.action === 'add') {
+      var catId = mod.categoryId;
+      var inCat = habits.filter(function(h) { return h.categoryId === catId; });
+      var maxOrd = inCat.reduce(function(m, h) { return Math.max(m, h.order); }, -1);
+      habits.push({ id: genId('h_'), name: mod.name || 'New habit', categoryId: catId, order: maxOrd + 1, createdAt: new Date().toISOString() });
+      lsSet('hf.habits', habits);
+    } else if (sug.action === 'tweak') {
+      var ti = habits.findIndex(function(h) { return h.id === sug.target_habit_id; });
+      if (ti !== -1 && mod.name) { habits[ti].name = mod.name; lsSet('hf.habits', habits); }
+    } else if (sug.action === 'remove') {
+      lsSet('hf.habits', habits.filter(function(h) { return h.id !== sug.target_habit_id; }));
+    } else if (sug.action === 'condense') {
+      var si = habits.findIndex(function(h) { return h.id === sug.target_habit_id; });
+      if (si !== -1 && mod.name) habits[si].name = mod.name;
+      var absorb = sug.absorbed_habit_ids || [];
+      habits = habits.filter(function(h) { return absorb.indexOf(h.id) === -1; });
+      lsSet('hf.habits', habits);
+    }
+  }
+
+  document.addEventListener('click', function(e) {
+    var applyBtn = e.target.closest('[data-plan-apply]');
+    var skipBtn  = e.target.closest('[data-plan-skip]');
+    if (!applyBtn && !skipBtn) return;
+    var tv = document.getElementById('view-today');
+    if (!tv || tv.classList.contains('hidden')) return;
+
+    var el = applyBtn || skipBtn;
+    var idx = parseInt(el.getAttribute(applyBtn ? 'data-plan-apply' : 'data-plan-skip'), 10);
+    var d = getDays();
+    var yday = d[YESTERDAY];
+    if (!yday || !yday.aiResponse || !yday.aiResponse.suggestions || !yday.aiResponse.suggestions[idx]) return;
+    var sug = yday.aiResponse.suggestions[idx];
+
+    if (skipBtn) {
+      sug.skipped = true;
+      lsSet('hf.days', d);
+      renderToday();
+      return;
+    }
+
+    applySuggestion(sug);
+    sug.applied = true;
+    lsSet('hf.days', d);
+    renderHabitsView();
+    renderToday();
+  });
+
   renderTabs();
   showView();
   </script>
