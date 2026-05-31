@@ -3,7 +3,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Habit Flow">
+  <meta name="theme-color" content="#0a0a0a">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <title>Habit Flow</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -142,9 +148,23 @@
     .hdone { opacity: .62; }
     .hdone .hname { text-decoration: line-through; text-decoration-color: rgba(255,255,255,.25); }
 
-    /* ── Layout padding for fixed nav bars ── */
-    @media (max-width: 767px)  { .lpad { padding-bottom: calc(74px + env(safe-area-inset-bottom, 0px)); } }
-    @media (min-width: 768px)  { .lpad { padding-top: 70px; } }
+    /* ── Layout padding for fixed nav bars + iOS safe areas ── */
+    /* Mobile: no fixed top bar, so the content container clears the notch /
+       Dynamic Island itself; bottom reserves space for the fixed tab bar. */
+    @media (max-width: 767px)  {
+      .lpad {
+        padding-top: max(env(safe-area-inset-top), 12px);
+        padding-bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+      }
+    }
+    /* Desktop/tablet: fixed top bar handles the top; add a bottom breathing
+       gap that also respects the home indicator if present. */
+    @media (min-width: 768px)  {
+      .lpad {
+        padding-top: 70px;
+        padding-bottom: max(env(safe-area-inset-bottom), 12px);
+      }
+    }
 
     /* ════════════════════════════════════════════
        CHUNK 2 STYLES
@@ -170,6 +190,7 @@
       .hf-modal {
         max-width: 100%; max-height: 85dvh;
         border-bottom-left-radius: 0; border-bottom-right-radius: 0;
+        padding-bottom: calc(28px + env(safe-area-inset-bottom));
         animation: sheetIn 200ms ease-out;
       }
     }
@@ -236,6 +257,14 @@
     @media (min-width:768px) { .stat-grid-4 { grid-template-columns:repeat(4,1fr); } }
     .trend-grid-3 { display:grid; grid-template-columns:1fr; gap:10px; }
     @media (min-width:768px) { .trend-grid-3 { grid-template-columns:repeat(3,1fr); } }
+
+    /* ── Toggle switch (dev mode) ── */
+    .hf-switch { position:relative; display:inline-block; width:44px; height:26px; flex-shrink:0; }
+    .hf-switch input { opacity:0; width:0; height:0; }
+    .hf-switch .sl { position:absolute; inset:0; background:rgba(255,255,255,.14); border-radius:9999px; transition:background 160ms; }
+    .hf-switch .sl::before { content:''; position:absolute; height:20px; width:20px; left:3px; top:3px; background:#fff; border-radius:50%; transition:transform 160ms; box-shadow:0 1px 3px rgba(0,0,0,.4); }
+    .hf-switch input:checked + .sl { background:#10b981; }
+    .hf-switch input:checked + .sl::before { transform:translateX(18px); }
   </style>
 </head>
 <body>
@@ -369,24 +398,33 @@
     lsSet('hf.categories', cats);
     lsSet('hf.habits', habits);
     lsSet('hf.days', {});
-    lsSet('hf.settings', { sortMode: 'category', overallStreak: 0, longestStreak: 0, categoryStreaks: cst });
+    lsSet('hf.settings', { sortMode: 'category', overallStreak: 0, longestStreak: 0, categoryStreaks: cst, devMode: false, dateOverride: null });
   })();
 
   /* ── App state ───────────────────────────────────────────────────────────── */
-  var TODAY     = todayISO();
-  var YESTERDAY = dateAdd(TODAY, -1);
   var currentTab = 'today';
 
   function getCats()     { return lsGet('hf.categories') || []; }
   function getHabits()   { return lsGet('hf.habits')     || []; }
   function getDays()     { return lsGet('hf.days')        || {}; }
   function getSettings() {
-    return lsGet('hf.settings') || { sortMode: 'category', overallStreak: 0, longestStreak: 0, categoryStreaks: {} };
+    return lsGet('hf.settings') || { sortMode: 'category', overallStreak: 0, longestStreak: 0, categoryStreaks: {}, devMode: false, dateOverride: null };
+  }
+
+  /* ── "Today" resolution (honours dev-mode date override) ───────────────────
+     Returns the simulated "today" when an override is set, otherwise the real
+     local calendar date. Every date-relative computation flows through this so
+     dev mode can move the whole app forward in time. Real wall-clock timestamps
+     (createdAt / sealedAt / generatedAt) intentionally keep using new Date(). */
+  function getToday() {
+    var s = getSettings();
+    return (s && s.dateOverride) ? s.dateOverride : todayISO();
   }
 
   /* ── Streak computation ──────────────────────────────────────────────────── */
   function computeStreaks() {
     var d = getDays(), h = getHabits(), c = getCats(), s = getSettings();
+    var TODAY = getToday();
 
     var overall = 0, dt = TODAY;
     for (var i = 0; i < 365; i++) {
@@ -560,6 +598,7 @@
   /* ── Today view (full render) ────────────────────────────────────────────── */
   function renderToday() {
     var s    = getSettings();
+    var TODAY = getToday(), YESTERDAY = dateAdd(TODAY, -1);
     var cats = getCats().sort(function(a, b) { return a.order - b.order; });
     var h    = getHabits();
     var d    = getDays();
@@ -578,14 +617,45 @@
       if (hasUnhandled) {
         var subCards = yday.aiResponse.suggestions.map(function(s, idx) {
           if (s.applied || s.skipped) return '';
+
+          /* Backward-compat: old suggestions without an options array keep the
+             original single Apply / Skip layout. */
+          if (!Array.isArray(s.options)) {
+            return '<div class="glass" style="border-radius:1rem;padding:16px 18px;margin-bottom:10px;background:rgba(255,255,255,.03)">' +
+              '<p style="color:rgba(255,255,255,.92);font-size:15px;font-weight:600;margin-bottom:6px">' + esc(s.title || '') + '</p>' +
+              '<p style="color:rgba(255,255,255,.75);font-size:13px;line-height:1.5;margin-bottom:6px">' + esc(s.why || '') + '</p>' +
+              '<p style="color:rgba(255,255,255,.55);font-size:12px;font-style:italic;line-height:1.5;margin-bottom:12px">' + esc(s.impact_prediction || '') + '</p>' +
+              '<div style="display:flex;gap:8px">' +
+                '<button data-plan-apply="' + idx + '" class="tap97" style="flex:1;background:rgba(16,185,129,.15);border:1px solid rgba(52,211,153,.2);color:#34d399;font-size:13px;font-weight:600;padding:9px;border-radius:.6rem">Apply</button>' +
+                '<button data-plan-skip="' + idx + '" class="tap97" style="flex:1;background:transparent;border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.5);font-size:13px;font-weight:500;padding:9px;border-radius:.6rem">Skip for today</button>' +
+              '</div>' +
+            '</div>';
+          }
+
+          var howHTML = s.how
+            ? '<p style="font-size:13px;line-height:1.5;margin-bottom:8px">' +
+                '<span style="color:rgba(255,255,255,.55);font-style:italic">Quick tip: </span>' +
+                '<span style="color:rgba(255,255,255,.7)">' + esc(s.how) + '</span>' +
+              '</p>'
+            : '';
+
+          var optsHTML = s.options.map(function(o, oi) {
+            return '<div style="border-radius:.75rem;padding:12px 14px;margin-bottom:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)">' +
+              '<p style="color:rgba(255,255,255,.9);font-size:14px;font-weight:500;margin-bottom:4px">' + esc(o.label || '') + '</p>' +
+              '<p style="color:rgba(255,255,255,.65);font-size:12px;line-height:1.45;margin-bottom:10px">→ ' + esc(o.preview || '') + '</p>' +
+              '<button data-apply-sug="' + idx + '" data-apply-opt="' + oi + '" class="tap97" style="width:100%;background:rgba(16,185,129,.15);border:1px solid rgba(52,211,153,.2);color:#34d399;font-size:13px;font-weight:600;padding:9px;border-radius:.6rem">Apply this</button>' +
+            '</div>';
+          }).join('');
+
           return '<div class="glass" style="border-radius:1rem;padding:16px 18px;margin-bottom:10px;background:rgba(255,255,255,.03)">' +
             '<p style="color:rgba(255,255,255,.92);font-size:15px;font-weight:600;margin-bottom:6px">' + esc(s.title || '') + '</p>' +
-            '<p style="color:rgba(255,255,255,.75);font-size:13px;line-height:1.5;margin-bottom:6px">' + esc(s.why || '') + '</p>' +
-            '<p style="color:rgba(255,255,255,.55);font-size:12px;font-style:italic;line-height:1.5;margin-bottom:12px">' + esc(s.impact_prediction || '') + '</p>' +
-            '<div style="display:flex;gap:8px">' +
-              '<button data-plan-apply="' + idx + '" class="tap97" style="flex:1;background:rgba(16,185,129,.15);border:1px solid rgba(52,211,153,.2);color:#34d399;font-size:13px;font-weight:600;padding:9px;border-radius:.6rem">Apply</button>' +
-              '<button data-plan-skip="' + idx + '" class="tap97" style="flex:1;background:transparent;border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.5);font-size:13px;font-weight:500;padding:9px;border-radius:.6rem">Skip for today</button>' +
-            '</div>' +
+            '<p style="color:rgba(255,255,255,.75);font-size:13px;line-height:1.5;margin-bottom:8px">' + esc(s.why || '') + '</p>' +
+            howHTML +
+            '<p style="color:rgba(255,255,255,.55);font-size:12px;font-style:italic;line-height:1.5;margin-bottom:0">' + esc(s.impact_prediction || '') + '</p>' +
+            '<div style="height:1px;background:rgba(255,255,255,.08);margin:14px 0"></div>' +
+            '<p style="color:rgba(255,255,255,.55);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Your options:</p>' +
+            optsHTML +
+            '<button data-plan-skip="' + idx + '" class="tap97" style="width:100%;margin-top:4px;background:transparent;border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.5);font-size:13px;font-weight:500;padding:9px;border-radius:.6rem">Skip both for today</button>' +
           '</div>';
         }).join('');
         planHTML =
@@ -686,11 +756,29 @@
         '</div>';
     }
 
+    /* Dev-mode date controls (forward arrow + offset indicator) */
+    var devArrow = '', devIndicator = '';
+    if (s.devMode) {
+      devArrow =
+        '<button id="dev-advance" class="tap95" aria-label="Advance one day" title="Advance one day" ' +
+          'style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:.5rem;color:rgba(255,255,255,.5);flex-shrink:0">' +
+          '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>' +
+        '</button>';
+      if (s.dateOverride) {
+        var realToday = todayISO(), probe = realToday, devAhead = 0, guard = 0;
+        while (probe < s.dateOverride && guard < 4000) { probe = dateAdd(probe, 1); devAhead++; guard++; }
+        devIndicator = '<span style="color:rgba(255,255,255,.5);font-size:12px;font-style:italic">(dev: +' + devAhead + ' days)</span>';
+      }
+    }
+
     var view = document.getElementById('view-today');
     view.innerHTML =
-      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">' +
-        '<h1 style="color:rgba(255,255,255,.95);font-size:21px;font-weight:600;line-height:1.25">' + longDate(TODAY) + '</h1>' +
-        '<div style="display:flex;align-items:center;gap:7px">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:20px">' +
+        '<div style="display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:wrap">' +
+          '<h1 style="color:rgba(255,255,255,.95);font-size:21px;font-weight:600;line-height:1.25">' + longDate(TODAY) + '</h1>' +
+          devArrow + devIndicator +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:7px;flex-shrink:0">' +
           '<span style="font-size:18px;line-height:1" aria-hidden="true">🔥</span>' +
           '<span id="snum" style="color:#34d399;font-size:22px;font-weight:700;font-variant-numeric:tabular-nums">' + streakN + '</span>' +
         '</div>' +
@@ -721,6 +809,25 @@
 
     var sealBtn = document.getElementById('seal-btn');
     if (sealBtn) sealBtn.addEventListener('click', sealDay);
+
+    var devBtn = document.getElementById('dev-advance');
+    if (devBtn) devBtn.addEventListener('click', advanceDevDay);
+  }
+
+  /* ── Dev mode: advance simulated "today" forward one calendar day ─────────── */
+  function advanceDevDay() {
+    var s = getSettings();
+    var base = s.dateOverride ? s.dateOverride : todayISO();
+    s.dateOverride = dateAdd(base, 1);
+    lsSet('hf.settings', s);
+    reRenderAll();
+  }
+
+  /* Re-render every view so all tabs reflect the current "today". */
+  function reRenderAll() {
+    renderToday();
+    renderHabitsView();
+    renderProgressView();
   }
 
   /* ── Submit Day ──────────────────────────────────────────────────────────── */
@@ -736,6 +843,7 @@
       wantDifferent: (diffEl.value || '').trim()
     };
 
+    var TODAY = getToday();
     var d = getDays();
     var comps = (d[TODAY] && d[TODAY].completions) ? d[TODAY].completions : {};
     d[TODAY] = {
@@ -766,6 +874,7 @@
     if (!tv || tv.classList.contains('hidden') || !tv.contains(btn)) return;
 
     var hid = btn.dataset.hid;
+    var TODAY = getToday();
     var d = getDays();
     if (d[TODAY] && d[TODAY].submitted) return;
     if (!d[TODAY]) d[TODAY] = { completions: {}, submitted: false };
@@ -803,6 +912,7 @@
     var cats   = getCats();
     var days   = getDays();
     var s      = getSettings();
+    var TODAY  = getToday();
 
     var catMap = {};
     cats.forEach(function(c) { catMap[c.id] = c; });
@@ -1423,24 +1533,79 @@
 
   /* ── Bootstrap ───────────────────────────────────────────────────────────── */
   /* ── Calendar month state ──────────────────────────────────────────────── */
-  var calMonth = (function() { var p = TODAY.split('-').map(Number); return { y: p[0], m: p[1] - 1 }; })();
+  var calMonth = (function() { var p = getToday().split('-').map(Number); return { y: p[0], m: p[1] - 1 }; })();
 
   /* ── Settings modal (API key) ──────────────────────────────────────────── */
   function openSettingsModal() {
-    var s = getSettings();
-    openModal(
-      '<h3 style="color:rgba(255,255,255,.92);font-size:17px;font-weight:600;margin-bottom:18px">Settings</h3>' +
-      mlabel('Anthropic API Key') +
-      '<input id="hf-apikey" type="password" class="m-inp" placeholder="sk-ant-..." autocomplete="off" value="' + esc(s.apiKey || '') + '">' +
-      '<p style="color:rgba(255,255,255,.4);font-size:12px;line-height:1.5;margin:10px 0 20px">Your key stays in this browser. Get one at console.anthropic.com.</p>' +
-      '<button id="hf-save-key" class="tap97" style="width:100%;background:rgba(16,185,129,.15);border:1px solid rgba(52,211,153,.2);color:#34d399;font-size:15px;font-weight:600;padding:13px;border-radius:.875rem">Save</button>'
-    );
-    document.getElementById('hf-save-key').addEventListener('click', function() {
-      var s2 = getSettings();
-      s2.apiKey = (document.getElementById('hf-apikey').value || '').trim();
-      lsSet('hf.settings', s2);
-      closeModal();
-    });
+    /* Persist whatever is currently typed in the API key field (so re-painting
+       the modal on a dev-mode toggle doesn't drop an unsaved key). */
+    function persistKeyField(s2) {
+      var keyEl = document.getElementById('hf-apikey');
+      if (keyEl) s2.apiKey = (keyEl.value || '').trim();
+      return s2;
+    }
+
+    function paint() {
+      var s = getSettings();
+      var devOn = !!s.devMode;
+      var devExtra = '';
+      if (devOn) {
+        var resetBtn = s.dateOverride
+          ? '<button id="hf-reset-today" class="tap97" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.8);font-size:14px;font-weight:500;padding:11px;border-radius:.75rem">Reset to real today</button>'
+          : '';
+        devExtra =
+          '<p style="color:rgba(255,255,255,.4);font-size:12px;line-height:1.5;margin:10px 0 14px">Use the arrow on the Today view to advance one day forward at a time.</p>' +
+          resetBtn;
+      }
+
+      var html =
+        '<h3 style="color:rgba(255,255,255,.92);font-size:17px;font-weight:600;margin-bottom:18px">Settings</h3>' +
+        mlabel('Anthropic API Key') +
+        '<input id="hf-apikey" type="password" class="m-inp" placeholder="sk-ant-..." autocomplete="off" value="' + esc(s.apiKey || '') + '">' +
+        '<p style="color:rgba(255,255,255,.4);font-size:12px;line-height:1.5;margin:10px 0 20px">Your key stays in this browser. Get one at console.anthropic.com.</p>' +
+        '<button id="hf-save-key" class="tap97" style="width:100%;background:rgba(16,185,129,.15);border:1px solid rgba(52,211,153,.2);color:#34d399;font-size:15px;font-weight:600;padding:13px;border-radius:.875rem">Save</button>' +
+        '<div style="height:1px;background:rgba(255,255,255,.08);margin:22px 0"></div>' +
+        mlabel('Dev mode') +
+        '<label style="display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer">' +
+          '<span style="color:rgba(255,255,255,.82);font-size:15px">Enable dev mode</span>' +
+          '<span class="hf-switch"><input type="checkbox" id="hf-devmode"' + (devOn ? ' checked' : '') + '><span class="sl"></span></span>' +
+        '</label>' +
+        '<div id="hf-dev-extra">' + devExtra + '</div>';
+
+      var modal = document.getElementById('hf-modal');
+      var overlay = document.getElementById('hf-overlay');
+      if (!modal || overlay.classList.contains('hidden')) {
+        openModal(html);
+        modal = document.getElementById('hf-modal');
+      } else {
+        modal.innerHTML = html;
+      }
+
+      document.getElementById('hf-save-key').addEventListener('click', function() {
+        lsSet('hf.settings', persistKeyField(getSettings()));
+        closeModal();
+      });
+
+      var tog = document.getElementById('hf-devmode');
+      tog.addEventListener('change', function() {
+        var s2 = persistKeyField(getSettings());
+        s2.devMode = tog.checked;
+        lsSet('hf.settings', s2);
+        paint();
+        reRenderAll();
+      });
+
+      var rb = document.getElementById('hf-reset-today');
+      if (rb) rb.addEventListener('click', function() {
+        var s2 = persistKeyField(getSettings());
+        s2.dateOverride = null;
+        lsSet('hf.settings', s2);
+        paint();
+        reRenderAll();
+      });
+    }
+
+    paint();
   }
 
   /* ── Day Detail modal ──────────────────────────────────────────────────── */
@@ -1553,42 +1718,67 @@
   document.getElementById('hf-gear').addEventListener('click', openSettingsModal);
 
   /* ── AI Coach ──────────────────────────────────────────────────────────── */
-  var COACH_SYSTEM = `You are a wise, exacting coach with deep expertise in behavior change, habit formation, exercise physiology, nutrition, sleep science, and applied psychology. Your role is to read a user's habit regimen, their daily reflection, and their recent compliance history, then propose exactly 2 specific changes designed to maximize their long-term wellbeing and capability.
+  var COACH_SYSTEM = `You are a wise, exacting coach with deep expertise in behavior change, habit formation, exercise physiology, nutrition, sleep science, and applied psychology. Your role is to read a user's habit regimen, their daily reflection, and their recent compliance history, then propose exactly 2 high-impact INSIGHTS. For each insight, you provide exactly 2 different concrete ways the user could apply it to their habit list, approaching the same problem from different angles.
 
 Principles:
-- Calibrate intensity to compliance. If they're keeping up with prior suggestions, push harder. If they're slipping, ease back and rebuild momentum. Stay challenging — never coast.
-- Favor changes with the highest probabilistic long-term impact. Sleep quality, daily movement, focused work, deliberate practice, social connection, and meaning generally outweigh micro-optimizations.
-- Never modify category groupings. Habits can be added, removed, tweaked, or condensed within existing categories only.
-- Each change must be specific, actionable, and small enough to start tomorrow.
-- Each change must include a 'why' grounded in evidence — name the mechanism.
-- Tone: clear, direct, warm. No flattery. No hedging. No toxic positivity. Treat the user as a capable adult.
+- Calibrate intensity to compliance. Keeping pace → push harder. Slipping → ease back and rebuild momentum. Always stay challenging — never coast.
+- Favor insights with highest probabilistic long-term impact: sleep, daily movement, deep work, deliberate practice, social connection, and meaning generally outweigh micro-optimizations.
+- Never modify category groupings. All changes happen within existing categories.
+- Each application option must be specific, actionable, and small enough to start tomorrow.
 
-Output ONLY valid JSON matching this schema (no markdown fences, no prose outside the JSON):
+Title style — IMPERATIVE ACTIONS, not noun phrases:
+- Good: 'Plan your work block the night before' / 'Anchor protein to every meal' / 'Cut the snooze loop'
+- Bad: 'Pre-commit your deep work target' / 'Add protein target' / 'Reduce snooze usage'
+
+Why + how — keep them separate fields:
+- 'why' = the mechanism, 1-2 sentences grounded in evidence
+- 'how' = the concrete actionable tip, 1-2 sentences ('When evening hits, write tomorrow's one priority task on a sticky note next to your laptop')
+
+Application options — two distinct angles per insight:
+- Approach the problem from genuinely different angles (one might tweak existing habit, another might add a new one, another might condense; avoid two options that only differ in habit name)
+- Each option's 'preview' must describe the EXACT change in plain English
+
+Preview format examples:
+- 'Will rename "1 deep work block" to "1 deep work block (pick task night before)"'
+- 'Will add new habit "Choose tomorrow's deep work task" to Productivity'
+- 'Will combine "Read 10 minutes" into "45-min focused block" (removes the separate reading habit)'
+
+Tone: clear, direct, warm. No flattery. No hedging. No toxic positivity. Capable adult.
+
+Output ONLY valid JSON (no markdown fences, no prose outside JSON):
 {
   "compliance_read": "keeping_pace" | "slowing_down" | "steady" | "new_user",
-  "hint": "<one teaser sentence, max 15 words, shown immediately after their reflection>",
+  "hint": "<one teaser sentence, max 15 words>",
   "suggestions": [
     {
-      "action": "add" | "tweak" | "remove" | "condense",
-      "target_habit_id": "<existing habit id, or null if action is add>",
-      "absorbed_habit_ids": ["<ids removed when condensing>"],
-      "modification": {
-        "name": "<the new or updated habit name, or null if action is remove>",
-        "categoryId": "<existing category id, required for add and tweak and condense>"
-      },
-      "title": "<short title for this change, e.g. 'Shrink deep work to 25 minutes'>",
-      "why": "<1-2 sentences explaining the reasoning, grounded in evidence>",
-      "impact_prediction": "<what the user should notice if they apply this for a week>"
+      "title": "<imperative action>",
+      "why": "<mechanism, 1-2 sentences>",
+      "how": "<concrete tip, 1-2 sentences>",
+      "impact_prediction": "<what user should notice within a week>",
+      "options": [
+        {
+          "label": "<short angle name, e.g. 'Embed planning into your existing block'>",
+          "preview": "<plain-English exact change>",
+          "action": "add" | "tweak" | "remove" | "condense",
+          "target_habit_id": "<id or null>",
+          "absorbed_habit_ids": [],
+          "modification": {
+            "name": "<new name or null>",
+            "categoryId": "<existing category id>"
+          }
+        }
+      ]
     }
   ]
 }
 
 Constraints:
-- Exactly 2 suggestions, no more, no less.
-- For 'remove': set modification to null, absorbed_habit_ids to [].
-- For 'add': set target_habit_id and absorbed_habit_ids to null/[]; modification.categoryId must reference an existing category.
-- For 'tweak': set absorbed_habit_ids to []; keep categoryId same as the target habit's current category.
-- For 'condense': target_habit_id is the surviving habit; absorbed_habit_ids lists habits that will be deleted; modification.name is the new combined name; categoryId stays the same as target's.`;
+- Exactly 2 suggestions.
+- Each suggestion has exactly 2 options.
+- For 'remove': modification = null.
+- For 'add': target_habit_id = null.
+- For 'tweak': keep categoryId same as target's current category.
+- For 'condense': target_habit_id is the survivor, absorbed_habit_ids lists deleted habits.`;
 
   function stripFences(t) {
     t = (t || '').trim();
@@ -1602,6 +1792,7 @@ Constraints:
     var habits = getHabits();
     var cats   = getCats();
     var days   = getDays();
+    var TODAY  = getToday();
 
     var currentHabits = habits.map(function(h) { return { id: h.id, name: h.name, categoryId: h.categoryId }; });
     var currentCategories = cats.map(function(c) { return { id: c.id, name: c.name }; });
@@ -1622,7 +1813,13 @@ Constraints:
       return {
         date: date,
         suggestions: days[date].aiResponse.suggestions.map(function(s) {
-          return { title: s.title, action: s.action, applied: !!s.applied, skipped: !!s.skipped };
+          return {
+            title: s.title,
+            applied: !!s.applied,
+            skipped: !!s.skipped,
+            appliedOption: (s.applied && s.options && typeof s.appliedOption === 'number' && s.options[s.appliedOption]) ? s.options[s.appliedOption].label : null,
+            optionsOffered: s.options ? s.options.map(function(o) { return o.label; }) : []
+          };
         })
       };
     });
@@ -1657,6 +1854,7 @@ Constraints:
     var habits = getHabits();
     var s = getSettings();
     var key = (s.apiKey || '').trim();
+    var TODAY = getToday();
 
     if (!habits.length) {
       coachTeaser('<p style="color:rgba(255,255,255,.6);font-size:14px;line-height:1.5">Add some habits first; the coach needs something to work with.</p>');
@@ -1727,38 +1925,45 @@ Constraints:
   }
 
   /* ── Apply / skip coach suggestions (morning plan) ─────────────────────── */
-  function applySuggestion(sug) {
+  function applySuggestion(sug, optIdx) {
+    /* New-format suggestions carry the action on the chosen option; old-format
+       suggestions carry it on the suggestion itself. */
+    var src = (sug.options && typeof optIdx === 'number') ? sug.options[optIdx] : sug;
+    if (!src) return;
     var habits = getHabits();
-    var mod = sug.modification || {};
-    if (sug.action === 'add') {
+    var mod = src.modification || {};
+    if (src.action === 'add') {
       var catId = mod.categoryId;
       var inCat = habits.filter(function(h) { return h.categoryId === catId; });
       var maxOrd = inCat.reduce(function(m, h) { return Math.max(m, h.order); }, -1);
       habits.push({ id: genId('h_'), name: mod.name || 'New habit', categoryId: catId, order: maxOrd + 1, createdAt: new Date().toISOString() });
       lsSet('hf.habits', habits);
-    } else if (sug.action === 'tweak') {
-      var ti = habits.findIndex(function(h) { return h.id === sug.target_habit_id; });
+    } else if (src.action === 'tweak') {
+      var ti = habits.findIndex(function(h) { return h.id === src.target_habit_id; });
       if (ti !== -1 && mod.name) { habits[ti].name = mod.name; lsSet('hf.habits', habits); }
-    } else if (sug.action === 'remove') {
-      lsSet('hf.habits', habits.filter(function(h) { return h.id !== sug.target_habit_id; }));
-    } else if (sug.action === 'condense') {
-      var si = habits.findIndex(function(h) { return h.id === sug.target_habit_id; });
+    } else if (src.action === 'remove') {
+      lsSet('hf.habits', habits.filter(function(h) { return h.id !== src.target_habit_id; }));
+    } else if (src.action === 'condense') {
+      var si = habits.findIndex(function(h) { return h.id === src.target_habit_id; });
       if (si !== -1 && mod.name) habits[si].name = mod.name;
-      var absorb = sug.absorbed_habit_ids || [];
+      var absorb = src.absorbed_habit_ids || [];
       habits = habits.filter(function(h) { return absorb.indexOf(h.id) === -1; });
       lsSet('hf.habits', habits);
     }
   }
 
   document.addEventListener('click', function(e) {
-    var applyBtn = e.target.closest('[data-plan-apply]');
-    var skipBtn  = e.target.closest('[data-plan-skip]');
-    if (!applyBtn && !skipBtn) return;
+    var optApplyBtn = e.target.closest('[data-apply-sug]');   /* new format: apply a chosen option */
+    var applyBtn    = e.target.closest('[data-plan-apply]');  /* old format: single apply */
+    var skipBtn     = e.target.closest('[data-plan-skip]');   /* skip (both / for today) */
+    if (!optApplyBtn && !applyBtn && !skipBtn) return;
     var tv = document.getElementById('view-today');
     if (!tv || tv.classList.contains('hidden')) return;
 
-    var el = applyBtn || skipBtn;
-    var idx = parseInt(el.getAttribute(applyBtn ? 'data-plan-apply' : 'data-plan-skip'), 10);
+    var idx = optApplyBtn
+      ? parseInt(optApplyBtn.getAttribute('data-apply-sug'), 10)
+      : parseInt((applyBtn || skipBtn).getAttribute(applyBtn ? 'data-plan-apply' : 'data-plan-skip'), 10);
+    var YESTERDAY = dateAdd(getToday(), -1);
     var d = getDays();
     var yday = d[YESTERDAY];
     if (!yday || !yday.aiResponse || !yday.aiResponse.suggestions || !yday.aiResponse.suggestions[idx]) return;
@@ -1771,8 +1976,15 @@ Constraints:
       return;
     }
 
-    applySuggestion(sug);
-    sug.applied = true;
+    if (optApplyBtn) {
+      var optIdx = parseInt(optApplyBtn.getAttribute('data-apply-opt'), 10);
+      applySuggestion(sug, optIdx);
+      sug.applied = true;
+      sug.appliedOption = optIdx;
+    } else {
+      applySuggestion(sug);
+      sug.applied = true;
+    }
     lsSet('hf.days', d);
     renderHabitsView();
     renderToday();
