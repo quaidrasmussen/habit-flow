@@ -1,4 +1,3 @@
-<!-- BUILD STATE: Phase 5 of 5 complete -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -109,23 +108,6 @@
     }
     .cfade { animation: cfade 2s ease-out forwards; }
 
-    /* ── Range sliders ── */
-    input[type=range] {
-      -webkit-appearance: none; appearance: none;
-      width: 100%; height: 6px; border-radius: 9999px;
-      background: rgba(255,255,255,.1); outline: none; cursor: pointer;
-    }
-    input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none; width: 24px; height: 24px;
-      border-radius: 50%; background: #10b981; cursor: pointer;
-      box-shadow: 0 0 10px rgba(16,185,129,.45);
-    }
-    input[type=range]::-moz-range-thumb {
-      width: 24px; height: 24px; border-radius: 50%;
-      background: #10b981; border: none; cursor: pointer;
-      box-shadow: 0 0 10px rgba(16,185,129,.45);
-    }
-
     /* ── Tap feedback ── */
     button { -webkit-tap-highlight-color: transparent; cursor: pointer; border: none; background: none; }
     .tap95:active { transform: scale(.95); transition: transform 80ms; }
@@ -167,7 +149,7 @@
     }
 
     /* ════════════════════════════════════════════
-       CHUNK 2 STYLES
+       MODAL & FORM STYLES
     ════════════════════════════════════════════ */
 
     /* ── Modal overlay ── */
@@ -199,7 +181,7 @@
     .irinput {
       background: transparent; border: none; outline: none;
       border-bottom: 1px solid rgba(52,211,153,.45);
-      color: rgba(255,255,255,.82); font-size: 14px; font-weight: 500;
+      color: rgba(255,255,255,.82); font-size: 16px; font-weight: 500;
       font-family: inherit; padding: 0 2px; min-width: 48px;
       flex: 1;
     }
@@ -235,7 +217,7 @@
     .m-inp {
       width: 100%; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12);
       border-radius: .75rem; padding: 12px 16px; color: rgba(255,255,255,.9);
-      font-size: 15px; font-family: inherit; outline: none; transition: border-color 150ms;
+      font-size: 16px; font-family: inherit; outline: none; transition: border-color 150ms;
     }
     .m-inp:focus { border-color: rgba(52,211,153,.4); }
     .m-sel {
@@ -251,7 +233,7 @@
     .dh:active { cursor: grabbing; }
 
     /* ════════════════════════════════════════════
-       CHUNK 3 STYLES
+       PROGRESS & SETTINGS STYLES
     ════════════════════════════════════════════ */
     .stat-grid-4 { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
     @media (min-width:768px) { .stat-grid-4 { grid-template-columns:repeat(4,1fr); } }
@@ -299,6 +281,10 @@
 
   <script>
   'use strict';
+
+  /* ── App version (bump manually when shipping notable changes) ───────────── */
+  var APP_VERSION = '1.0';
+  var APP_UPDATED = '2025-05-31';
 
   /* ── Inspirational lines ─────────────────────────────────────────────────── */
   var LINES = [
@@ -353,6 +339,60 @@
   function lsGet(k) { try { return JSON.parse(localStorage.getItem(k)); } catch(e) { return null; } }
   function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} }
 
+  /* ── Toast (transient confirmation) ──────────────────────────────────────── */
+  var _toastEl = null, _toastHideT = null, _toastRemoveT = null;
+  function showToast(message) {
+    /* Replace any existing toast rather than stacking. */
+    if (_toastHideT) { clearTimeout(_toastHideT); _toastHideT = null; }
+    if (_toastRemoveT) { clearTimeout(_toastRemoveT); _toastRemoveT = null; }
+    if (_toastEl && _toastEl.parentNode) _toastEl.parentNode.removeChild(_toastEl);
+
+    var el = document.createElement('div');
+    el.className = 'glass';
+    el.textContent = String(message == null ? '' : message);
+    el.style.cssText =
+      'position:fixed;left:50%;transform:translateX(-50%) translateY(8px);' +
+      'max-width:90%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;' +
+      'z-index:120;padding:11px 18px;border-radius:9999px;pointer-events:none;' +
+      'color:rgba(255,255,255,.9);font-size:13px;font-weight:500;opacity:0;' +
+      'transition:opacity .2s ease, transform .2s ease;';
+    /* Bottom-center on mobile (above tab bar + home indicator); top-center on desktop. */
+    if (window.matchMedia && window.matchMedia('(min-width:768px)').matches) {
+      el.style.top = 'max(78px, calc(env(safe-area-inset-top) + 60px))';
+    } else {
+      el.style.bottom = 'calc(84px + env(safe-area-inset-bottom, 0px))';
+    }
+    document.body.appendChild(el);
+    _toastEl = el;
+
+    requestAnimationFrame(function() {
+      el.style.opacity = '1';
+      el.style.transform = 'translateX(-50%) translateY(0)';
+    });
+    /* Fade in 200ms, hold 1.6s, fade out 400ms (≈2.2s total). */
+    _toastHideT = setTimeout(function() {
+      el.style.transition = 'opacity .4s ease, transform .4s ease';
+      el.style.opacity = '0';
+      el.style.transform = 'translateX(-50%) translateY(8px)';
+      _toastRemoveT = setTimeout(function() {
+        if (el.parentNode) el.parentNode.removeChild(el);
+        if (_toastEl === el) _toastEl = null;
+      }, 400);
+    }, 1800);
+  }
+
+  /* ── Reflection draft autosave helpers ───────────────────────────────────── */
+  function getDrafts() { return lsGet('hf.drafts') || {}; }
+  function pruneDrafts() {
+    var drafts = getDrafts();
+    var cutoff = dateAdd(getToday(), -7);
+    var changed = false;
+    Object.keys(drafts).forEach(function(k) {
+      if (k < cutoff) { delete drafts[k]; changed = true; }
+    });
+    if (changed) lsSet('hf.drafts', drafts);
+  }
+
   function genId(prefix) {
     var chars = 'abcdefghijklmnopqrstuvwxyz0123456789', s = prefix;
     for (var i = 0; i < 6; i++) s += chars[Math.floor(Math.random() * 36)];
@@ -381,6 +421,13 @@
     var p = iso.split('-').map(Number);
     return new Date(p[0], p[1] - 1, p[2]).toLocaleDateString('en-US', {
       weekday: 'long', month: 'long', day: 'numeric'
+    });
+  }
+
+  function fmtMonthDayYear(iso) {
+    var p = iso.split('-').map(Number);
+    return new Date(p[0], p[1] - 1, p[2]).toLocaleDateString('en-US', {
+      month: 'long', day: 'numeric', year: 'numeric'
     });
   }
 
@@ -430,21 +477,27 @@
     for (var i = 0; i < 365; i++) {
       var day = d[dt];
       if (!day || !day.submitted) break;
-      var done = h.filter(function(x) { return (day.completions || {})[x.id]; }).length;
-      if (done < 3) break;
+      /* Only count habits that existed on that date; require all of them done up
+         to a cap of 3, so users with 1–2 habits can still build a streak. */
+      var existed = h.filter(function(x) { var cc = (x.createdAt || '').slice(0,10); return !cc || cc <= dt; });
+      var done = existed.filter(function(x) { return (day.completions || {})[x.id]; }).length;
+      if (done < Math.min(3, existed.length)) break;
       overall++;
       dt = dateAdd(dt, -1);
     }
 
     var cs = {};
     c.forEach(function(cat) {
-      var ch = h.filter(function(x) { return x.categoryId === cat.id; });
-      if (!ch.length) { cs[cat.id] = 0; return; }
       var streak = 0, dt2 = TODAY;
       for (var j = 0; j < 365; j++) {
         var day2 = d[dt2];
         if (!day2 || !day2.submitted) break;
         var comps = day2.completions || {};
+        /* Only habits in this category that already existed on that date — a habit
+           added later wasn't part of the past day's roster, so it must not break
+           an otherwise-intact streak. */
+        var ch = h.filter(function(x) { var cc = (x.createdAt || '').slice(0,10); return x.categoryId === cat.id && (!cc || cc <= dt2); });
+        if (!ch.length) break;
         if (!ch.every(function(x) { return comps[x.id]; })) break;
         streak++;
         dt2 = dateAdd(dt2, -1);
@@ -535,16 +588,6 @@
   }
 
   /* ── Today view helpers ──────────────────────────────────────────────────── */
-  function sliderRow(key, label, val) {
-    return '<div>' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">' +
-        '<span style="color:rgba(255,255,255,.82);font-weight:500">' + label + '</span>' +
-        '<span id="' + key + '-vl" style="color:#34d399;font-size:18px;font-weight:700;font-variant-numeric:tabular-nums">' + val + '</span>' +
-      '</div>' +
-      '<input type="range" min="1" max="10" value="' + val + '" id="' + key + '-sl">' +
-    '</div>';
-  }
-
   function sortBtn(mode, label, current) {
     var on = mode === current;
     return '<button class="sort-btn tap97' + (on ? ' son' : '') +
@@ -595,6 +638,23 @@
     }
   }
 
+  /* ── Surfaceable coach suggestions (scan the last 14 days) ───────────────── */
+  function getSurfaceableSuggestions(today) {
+    var d = getDays();
+    var results = [];
+    for (var i = 1; i <= 14; i++) {
+      var date = dateAdd(today, -i);
+      var day = d[date];
+      if (!day || !day.aiResponse || !Array.isArray(day.aiResponse.suggestions)) continue;
+      day.aiResponse.suggestions.forEach(function(s, idx) {
+        if (s.applied || s.skipped) return;
+        var surfaceOn = s.surfaceOn || dateAdd(date, 1); /* backward-compat */
+        if (surfaceOn <= today) results.push({ originDate: date, suggestionIdx: idx, suggestion: s });
+      });
+    }
+    return results;
+  }
+
   /* ── Today view (full render) ────────────────────────────────────────────── */
   function renderToday() {
     var s    = getSettings();
@@ -610,86 +670,104 @@
     var streakN = s.overallStreak || 0;
     var line = LINES[dayOfYear(TODAY) % 30];
 
-    var yday = d[YESTERDAY];
+    var planItems = getSurfaceableSuggestions(TODAY);
     var planHTML = '';
-    if (yday && yday.aiResponse && yday.aiResponse.suggestions) {
-      var hasUnhandled = yday.aiResponse.suggestions.some(function(s) { return !s.applied && !s.skipped; });
-      if (hasUnhandled) {
-        var subCards = yday.aiResponse.suggestions.map(function(s, idx) {
-          if (s.applied || s.skipped) return '';
+    if (planItems.length) {
+      var subCards = planItems.map(function(item) {
+        var s = item.suggestion;
+        var idx = item.suggestionIdx;
+        var od = item.originDate;
 
-          /* Backward-compat: old suggestions without an options array keep the
-             original single Apply / Skip layout. */
-          if (!Array.isArray(s.options)) {
-            return '<div class="glass" style="border-radius:1rem;padding:16px 18px;margin-bottom:10px;background:rgba(255,255,255,.03)">' +
-              '<p style="color:rgba(255,255,255,.92);font-size:15px;font-weight:600;margin-bottom:6px">' + esc(s.title || '') + '</p>' +
-              '<p style="color:rgba(255,255,255,.75);font-size:13px;line-height:1.5;margin-bottom:6px">' + esc(s.why || '') + '</p>' +
-              '<p style="color:rgba(255,255,255,.55);font-size:12px;font-style:italic;line-height:1.5;margin-bottom:12px">' + esc(s.impact_prediction || '') + '</p>' +
-              '<div style="display:flex;gap:8px">' +
-                '<button data-plan-apply="' + idx + '" class="tap97" style="flex:1;background:rgba(16,185,129,.15);border:1px solid rgba(52,211,153,.2);color:#34d399;font-size:13px;font-weight:600;padding:9px;border-radius:.6rem">Apply</button>' +
-                '<button data-plan-skip="' + idx + '" class="tap97" style="flex:1;background:transparent;border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.5);font-size:13px;font-weight:500;padding:9px;border-radius:.6rem">Skip for today</button>' +
-              '</div>' +
-            '</div>';
-          }
+        /* Three explicit choices, stacked full-width below the options. */
+        var laterSkip =
+          '<button data-plan-later="' + idx + '" data-origin="' + od + '" class="tap97" style="width:100%;margin-top:4px;background:transparent;border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.55);font-size:13px;font-weight:500;padding:9px;border-radius:.6rem">Maybe later</button>' +
+          '<button data-plan-skip="' + idx + '" data-origin="' + od + '" class="tap97" style="width:100%;margin-top:6px;background:transparent;border:1px solid rgba(251,113,133,.22);color:rgba(251,113,133,.8);font-size:13px;font-weight:500;padding:9px;border-radius:.6rem">Not for me</button>';
 
-          var howHTML = s.how
-            ? '<p style="font-size:13px;line-height:1.5;margin-bottom:8px">' +
-                '<span style="color:rgba(255,255,255,.55);font-style:italic">Quick tip: </span>' +
-                '<span style="color:rgba(255,255,255,.7)">' + esc(s.how) + '</span>' +
-              '</p>'
-            : '';
-
-          var optsHTML = s.options.map(function(o, oi) {
-            return '<div style="border-radius:.75rem;padding:12px 14px;margin-bottom:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)">' +
-              '<p style="color:rgba(255,255,255,.9);font-size:14px;font-weight:500;margin-bottom:4px">' + esc(o.label || '') + '</p>' +
-              '<p style="color:rgba(255,255,255,.65);font-size:12px;line-height:1.45;margin-bottom:10px">→ ' + esc(o.preview || '') + '</p>' +
-              '<button data-apply-sug="' + idx + '" data-apply-opt="' + oi + '" class="tap97" style="width:100%;background:rgba(16,185,129,.15);border:1px solid rgba(52,211,153,.2);color:#34d399;font-size:13px;font-weight:600;padding:9px;border-radius:.6rem">Apply this</button>' +
-            '</div>';
-          }).join('');
-
+        /* Backward-compat: old suggestions without an options array keep the
+           original single Apply layout, now followed by the three-state choices. */
+        if (!Array.isArray(s.options)) {
           return '<div class="glass" style="border-radius:1rem;padding:16px 18px;margin-bottom:10px;background:rgba(255,255,255,.03)">' +
             '<p style="color:rgba(255,255,255,.92);font-size:15px;font-weight:600;margin-bottom:6px">' + esc(s.title || '') + '</p>' +
-            '<p style="color:rgba(255,255,255,.75);font-size:13px;line-height:1.5;margin-bottom:8px">' + esc(s.why || '') + '</p>' +
-            howHTML +
-            '<p style="color:rgba(255,255,255,.55);font-size:12px;font-style:italic;line-height:1.5;margin-bottom:0">' + esc(s.impact_prediction || '') + '</p>' +
-            '<div style="height:1px;background:rgba(255,255,255,.08);margin:14px 0"></div>' +
-            '<p style="color:rgba(255,255,255,.55);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Your options:</p>' +
-            optsHTML +
-            '<button data-plan-skip="' + idx + '" class="tap97" style="width:100%;margin-top:4px;background:transparent;border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.5);font-size:13px;font-weight:500;padding:9px;border-radius:.6rem">Skip both for today</button>' +
+            '<p style="color:rgba(255,255,255,.75);font-size:13px;line-height:1.5;margin-bottom:6px">' + esc(s.why || '') + '</p>' +
+            '<p style="color:rgba(255,255,255,.55);font-size:12px;font-style:italic;line-height:1.5;margin-bottom:12px">' + esc(s.impact_prediction || '') + '</p>' +
+            '<button data-plan-apply="' + idx + '" data-origin="' + od + '" class="tap97" style="width:100%;background:rgba(16,185,129,.15);border:1px solid rgba(52,211,153,.2);color:#34d399;font-size:13px;font-weight:600;padding:9px;border-radius:.6rem">Apply</button>' +
+            laterSkip +
+          '</div>';
+        }
+
+        var howHTML = s.how
+          ? '<p style="font-size:13px;line-height:1.5;margin-bottom:8px">' +
+              '<span style="color:rgba(255,255,255,.55);font-style:italic">Quick tip: </span>' +
+              '<span style="color:rgba(255,255,255,.7)">' + esc(s.how) + '</span>' +
+            '</p>'
+          : '';
+
+        var optsHTML = s.options.map(function(o, oi) {
+          return '<div style="border-radius:.75rem;padding:12px 14px;margin-bottom:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)">' +
+            '<p style="color:rgba(255,255,255,.9);font-size:14px;font-weight:500;margin-bottom:4px">' + esc(o.label || '') + '</p>' +
+            '<p style="color:rgba(255,255,255,.65);font-size:12px;line-height:1.45;margin-bottom:10px">→ ' + esc(o.preview || '') + '</p>' +
+            '<button data-apply-sug="' + idx + '" data-apply-opt="' + oi + '" data-origin="' + od + '" class="tap97" style="width:100%;background:rgba(16,185,129,.15);border:1px solid rgba(52,211,153,.2);color:#34d399;font-size:13px;font-weight:600;padding:9px;border-radius:.6rem">Apply this</button>' +
           '</div>';
         }).join('');
-        planHTML =
-          '<div class="glass" style="border-radius:1.25rem;padding:18px;margin-bottom:20px">' +
-            '<p style="color:rgba(52,211,153,.8);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px">Coach’s plan from yesterday</p>' +
-            subCards +
-          '</div>';
-      }
+
+        return '<div class="glass" style="border-radius:1rem;padding:16px 18px;margin-bottom:10px;background:rgba(255,255,255,.03)">' +
+          '<p style="color:rgba(255,255,255,.92);font-size:15px;font-weight:600;margin-bottom:6px">' + esc(s.title || '') + '</p>' +
+          '<p style="color:rgba(255,255,255,.75);font-size:13px;line-height:1.5;margin-bottom:8px">' + esc(s.why || '') + '</p>' +
+          howHTML +
+          '<p style="color:rgba(255,255,255,.55);font-size:12px;font-style:italic;line-height:1.5;margin-bottom:0">' + esc(s.impact_prediction || '') + '</p>' +
+          '<div style="height:1px;background:rgba(255,255,255,.08);margin:14px 0"></div>' +
+          '<p style="color:rgba(255,255,255,.55);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Your options:</p>' +
+          optsHTML +
+          laterSkip +
+        '</div>';
+      }).join('');
+      planHTML =
+        '<div class="glass" style="border-radius:1.25rem;padding:18px;margin-bottom:20px">' +
+          '<p style="color:rgba(52,211,153,.8);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px">Coach’s plan from yesterday</p>' +
+          subCards +
+        '</div>';
     }
 
     var yd = d[YESTERDAY];
     var yHTML = '';
     if (yd && yd.submitted) {
       var yc    = yd.completions || {};
-      var yDone = h.filter(function(x) { return yc[x.id]; }).length;
+      /* Only habits that already existed at the end of yesterday count toward
+         the recap — a habit created today wasn't part of yesterday's roster. */
+      var yh    = h.filter(function(x) { var cc = (x.createdAt || '').slice(0,10); return !cc || cc <= YESTERDAY; });
+      var yDone = yh.filter(function(x) { return yc[x.id]; }).length;
       var best  = null, bestR = -1;
       cats.forEach(function(cat) {
-        var ch = h.filter(function(x) { return x.categoryId === cat.id; });
+        var ch = yh.filter(function(x) { return x.categoryId === cat.id; });
         if (!ch.length) return;
         var r = ch.filter(function(x) { return yc[x.id]; }).length / ch.length;
         if (r > bestR) { bestR = r; best = cat; }
       });
-      var missedH = h.find(function(x) { return !yc[x.id]; });
+      var missedH = yh.find(function(x) { return !yc[x.id]; });
+      /* Don't claim a "strongest" category when nothing was actually completed. */
+      var strongestSeg = (best && bestR > 0)
+        ? ' <span style="color:rgba(255,255,255,.22)">•</span> Strongest: ' + best.name
+        : '';
       yHTML =
         '<div class="glass" style="border-radius:1.25rem;padding:16px 20px;margin-bottom:20px">' +
           '<p style="color:rgba(255,255,255,.36);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px">Yesterday</p>' +
           '<p style="color:rgba(255,255,255,.78);font-size:14px;line-height:1.6">' +
-            yDone + '/' + h.length + ' habits' +
-            ' <span style="color:rgba(255,255,255,.22)">•</span> ' +
-            'Strongest: ' + (best ? best.name : '—') +
+            yDone + '/' + yh.length + ' habits' +
+            strongestSeg +
             ' <span style="color:rgba(255,255,255,.22)">•</span> ' +
             'Missed: ' + (missedH ? missedH.name : 'nothing') +
           '</p>' +
         '</div>';
+    } else {
+      /* Gap case: they've used the app before but didn't seal yesterday. First-ever
+         users (no prior sealed day) get nothing — we don't invent false history. */
+      var hasPriorSealed = Object.keys(d).some(function(k) { return k < TODAY && d[k] && d[k].submitted; });
+      if (hasPriorSealed) {
+        yHTML =
+          '<div class="glass" style="border-radius:1.25rem;padding:16px 20px;margin-bottom:20px">' +
+            '<p style="color:rgba(255,255,255,.6);font-size:14px;line-height:1.6">No reflection yesterday. Fresh start today.</p>' +
+          '</div>';
+      }
     }
 
     var csk = s.categoryStreaks || {};
@@ -720,11 +798,31 @@
         '</div>';
       };
       var teaserHTML;
-      if (td.aiResponse && td.aiResponse.hint) {
-        teaserHTML = '<p style="color:rgba(255,255,255,.82);font-size:14px;font-style:italic;line-height:1.6">' + esc(td.aiResponse.hint) + '</p>' +
-          '<p style="color:rgba(255,255,255,.4);font-size:12px;margin-top:6px">Tomorrow’s full plan ready.</p>';
+      if (td.aiResponse && td.aiResponse.hintDismissed) {
+        teaserHTML = '<p style="color:rgba(255,255,255,.4);font-size:13px;line-height:1.5">Coach plan saved for tomorrow.</p>';
+      } else if (td.aiResponse && td.aiResponse.hint) {
+        teaserHTML =
+          '<div style="display:flex;align-items:flex-start;gap:10px">' +
+            '<div style="flex:1;min-width:0">' +
+              '<p style="color:rgba(255,255,255,.82);font-size:14px;font-style:italic;line-height:1.6">' + esc(td.aiResponse.hint) + '</p>' +
+              '<p style="color:rgba(255,255,255,.4);font-size:12px;margin-top:6px">Tomorrow’s full plan ready.</p>' +
+            '</div>' +
+            '<button id="coach-hint-dismiss" class="icbtn" aria-label="Dismiss" title="Dismiss" style="width:18px;height:18px;flex-shrink:0;color:rgba(255,255,255,.35)">' +
+              '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+            '</button>' +
+          '</div>';
       } else {
-        teaserHTML = '<p style="color:rgba(255,255,255,.5);font-size:14px;font-style:italic">Coach is thinking…</p>';
+        /* A sealed day with no AI response and a sealedAt older than 90s means the
+           coach call failed (or never landed) and won't recover on its own — offer
+           a retry. Within 90s the call may still be in flight, so keep waiting. */
+        var coachStale = td.submitted === true && !td.aiResponse && td.sealedAt &&
+          (new Date() - new Date(td.sealedAt)) > 90000;
+        if (coachStale) {
+          teaserHTML = '<p style="color:rgba(255,255,255,.6);font-size:14px;line-height:1.5;margin-bottom:10px">The coach didn’t finish — try again.</p>' +
+            '<button id="coach-teaser-retry" class="tap97" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.8);font-size:13px;font-weight:500;padding:8px 16px;border-radius:.6rem">Try again</button>';
+        } else {
+          teaserHTML = '<p style="color:rgba(255,255,255,.5);font-size:14px;font-style:italic">Coach is thinking…</p>';
+        }
       }
       eodHTML =
         '<div class="glass" style="border-radius:1.5rem;padding:24px 22px;margin-bottom:32px">' +
@@ -812,6 +910,44 @@
 
     var devBtn = document.getElementById('dev-advance');
     if (devBtn) devBtn.addEventListener('click', advanceDevDay);
+
+    var teaserRetry = document.getElementById('coach-teaser-retry');
+    if (teaserRetry) teaserRetry.addEventListener('click', runCoach);
+
+    var hintDismiss = document.getElementById('coach-hint-dismiss');
+    if (hintDismiss) hintDismiss.addEventListener('click', function() {
+      var dd = getDays();
+      if (dd[TODAY] && dd[TODAY].aiResponse) {
+        dd[TODAY].aiResponse.hintDismissed = true;
+        lsSet('hf.days', dd);
+        renderToday();
+      }
+    });
+
+    /* Reflection draft autosave — only while the day is still open. */
+    if (!sealed) {
+      var draft = getDrafts()[TODAY] || {};
+      var wEl = document.getElementById('eod-well');
+      var hEl = document.getElementById('eod-hard');
+      var fEl = document.getElementById('eod-diff');
+      if (wEl && typeof draft.wentWell === 'string') wEl.value = draft.wentWell;
+      if (hEl && typeof draft.wasHard === 'string') hEl.value = draft.wasHard;
+      if (fEl && typeof draft.wantDifferent === 'string') fEl.value = draft.wantDifferent;
+      var draftT = null;
+      var saveDraft = function() {
+        if (draftT) clearTimeout(draftT);
+        draftT = setTimeout(function() {
+          var drafts = getDrafts();
+          drafts[TODAY] = {
+            wentWell: wEl ? wEl.value : '',
+            wasHard: hEl ? hEl.value : '',
+            wantDifferent: fEl ? fEl.value : ''
+          };
+          lsSet('hf.drafts', drafts);
+        }, 300);
+      };
+      [wEl, hEl, fEl].forEach(function(el) { if (el) el.addEventListener('input', saveDraft); });
+    }
   }
 
   /* ── Dev mode: advance simulated "today" forward one calendar day ─────────── */
@@ -853,6 +989,10 @@
       sealedAt: new Date().toISOString()
     };
     lsSet('hf.days', d);
+
+    /* The reflection draft has served its purpose now that the day is sealed. */
+    var drafts = getDrafts();
+    if (drafts[TODAY]) { delete drafts[TODAY]; lsSet('hf.drafts', drafts); }
 
     var r = computeStreaks();
     var s = getSettings();
@@ -897,14 +1037,6 @@
       }
     }
   });
-
-  /* ── hex → rgba helper ───────────────────────────────────────────────────── */
-  function hexToRgba(hex, alpha) {
-    var r = parseInt(hex.slice(1,3), 16);
-    var g = parseInt(hex.slice(3,5), 16);
-    var b = parseInt(hex.slice(5,7), 16);
-    return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
-  }
 
   /* ── Progress view ───────────────────────────────────────────────────────── */
   function renderProgressView() {
@@ -1017,6 +1149,11 @@
     var chevL = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>';
     var chevR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>';
 
+    var noSealedEver = Object.keys(days).filter(function(k) { return days[k] && days[k].submitted; }).length === 0;
+    var calEmpty = noSealedEver
+      ? '<p style="text-align:center;color:rgba(255,255,255,.4);font-size:13px;line-height:1.6;margin-top:14px">Your sealed days will show up here.</p>'
+      : '';
+
     var calHTML =
       '<div class="glass" style="border-radius:1.25rem;padding:18px 16px;margin-bottom:32px">' +
         '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">' +
@@ -1026,6 +1163,7 @@
         '</div>' +
         '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px">' + headCells + '</div>' +
         '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">' + cells + '</div>' +
+        calEmpty +
       '</div>';
 
     document.getElementById('view-progress').innerHTML =
@@ -1034,7 +1172,7 @@
   }
 
   /* ════════════════════════════════════════════
-     CHUNK 2 — HABITS CRUD
+     HABITS VIEW (CRUD)
   ════════════════════════════════════════════ */
 
   var CAT_COLORS = ['#34d399','#38bdf8','#a78bfa','#fbbf24','#fb7185','#2dd4bf','#e879f9','#a3e635'];
@@ -1413,11 +1551,21 @@
         '</button>' +
       '</div>';
 
-    var sections = cats.map(function(cat, ci) {
-      var catH = habits.filter(function(h){ return h.categoryId === cat.id; })
-                       .sort(function(a,b){ return a.order-b.order; });
-      return catSectionHTML(cat, catH, ci === 0, ci === cats.length - 1);
-    }).join('');
+    var sections;
+    if (!habits.length) {
+      /* Edge case: everything was deleted. The "+ Add Habit" button stays in the
+         top strip; just offer a gentle nudge instead of empty category shells. */
+      sections =
+        '<div style="text-align:center;padding:48px 16px 40px">' +
+          '<p style="color:rgba(255,255,255,.4);font-size:14px;line-height:1.6">Add your first habit to get started.</p>' +
+        '</div>';
+    } else {
+      sections = cats.map(function(cat, ci) {
+        var catH = habits.filter(function(h){ return h.categoryId === cat.id; })
+                         .sort(function(a,b){ return a.order-b.order; });
+        return catSectionHTML(cat, catH, ci === 0, ci === cats.length - 1);
+      }).join('');
+    }
 
     var addCatBtn =
       '<button data-action="add-category" class="ghost-btn" style="margin-bottom:32px">' +
@@ -1531,6 +1679,15 @@
   /* ── Modal overlay: backdrop closes modal ────────────────────────────────── */
   document.getElementById('hf-overlay').addEventListener('click', closeModal);
 
+  /* ── Escape closes an open modal (but lets an inline rename cancel itself) ── */
+  document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Escape') return;
+    var ae = document.activeElement;
+    if (ae && ae.classList && ae.classList.contains('irinput')) return;
+    var overlay = document.getElementById('hf-overlay');
+    if (overlay && !overlay.classList.contains('hidden')) closeModal();
+  });
+
   /* ── Bootstrap ───────────────────────────────────────────────────────────── */
   /* ── Calendar month state ──────────────────────────────────────────────── */
   var calMonth = (function() { var p = getToday().split('-').map(Number); return { y: p[0], m: p[1] - 1 }; })();
@@ -1563,6 +1720,7 @@
         mlabel('Anthropic API Key') +
         '<input id="hf-apikey" type="password" class="m-inp" placeholder="sk-ant-..." autocomplete="off" value="' + esc(s.apiKey || '') + '">' +
         '<p style="color:rgba(255,255,255,.4);font-size:12px;line-height:1.5;margin:10px 0 20px">Your key stays in this browser. Get one at console.anthropic.com.</p>' +
+        '<p id="hf-key-warn" class="text-rose-300" style="font-size:12px;line-height:1.5;margin:-12px 0 16px"></p>' +
         '<button id="hf-save-key" class="tap97" style="width:100%;background:rgba(16,185,129,.15);border:1px solid rgba(52,211,153,.2);color:#34d399;font-size:15px;font-weight:600;padding:13px;border-radius:.875rem">Save</button>' +
         '<div style="height:1px;background:rgba(255,255,255,.08);margin:22px 0"></div>' +
         mlabel('Dev mode') +
@@ -1570,7 +1728,9 @@
           '<span style="color:rgba(255,255,255,.82);font-size:15px">Enable dev mode</span>' +
           '<span class="hf-switch"><input type="checkbox" id="hf-devmode"' + (devOn ? ' checked' : '') + '><span class="sl"></span></span>' +
         '</label>' +
-        '<div id="hf-dev-extra">' + devExtra + '</div>';
+        '<div id="hf-dev-extra">' + devExtra + '</div>' +
+        '<div style="height:1px;background:rgba(255,255,255,.08);margin:22px 0 14px"></div>' +
+        '<p style="color:rgba(255,255,255,.3);font-size:12px;text-align:center">Habit Flow v' + APP_VERSION + ' · Updated ' + fmtMonthDayYear(APP_UPDATED) + '</p>';
 
       var modal = document.getElementById('hf-modal');
       var overlay = document.getElementById('hf-overlay');
@@ -1582,7 +1742,16 @@
       }
 
       document.getElementById('hf-save-key').addEventListener('click', function() {
+        var keyEl = document.getElementById('hf-apikey');
+        var typed = keyEl ? (keyEl.value || '').trim() : '';
         lsSet('hf.settings', persistKeyField(getSettings()));
+        /* Save is never blocked — just flag a key that doesn't look right and keep
+           the modal open so the warning is visible. It clears on the next paint. */
+        if (typed && typed.indexOf('sk-ant-') !== 0) {
+          var warn = document.getElementById('hf-key-warn');
+          if (warn) warn.textContent = 'That doesn\'t look like an Anthropic API key — they usually start with sk-ant-';
+          return;
+        }
         closeModal();
       });
 
@@ -1908,7 +2077,8 @@ Constraints:
         coachRetry('Coach response unreadable — try again.');
         return;
       }
-      var sugg = parsed.suggestions.map(function(x) { x.applied = false; x.skipped = false; return x; });
+      var _surfaceOn = dateAdd(TODAY, 1); /* yesterday's plan surfaces today, so this one surfaces tomorrow */
+      var sugg = parsed.suggestions.map(function(x) { x.applied = false; x.skipped = false; x.surfaceOn = _surfaceOn; return x; });
       var d = getDays();
       if (!d[TODAY]) d[TODAY] = { completions: {}, submitted: true };
       d[TODAY].aiResponse = {
@@ -1932,42 +2102,63 @@ Constraints:
     if (!src) return;
     var habits = getHabits();
     var mod = src.modification || {};
+    function tn(n) { n = String(n == null ? '' : n); return n.length > 30 ? n.slice(0, 30) + '…' : n; }
     if (src.action === 'add') {
       var catId = mod.categoryId;
       var inCat = habits.filter(function(h) { return h.categoryId === catId; });
       var maxOrd = inCat.reduce(function(m, h) { return Math.max(m, h.order); }, -1);
-      habits.push({ id: genId('h_'), name: mod.name || 'New habit', categoryId: catId, order: maxOrd + 1, createdAt: new Date().toISOString() });
+      var addName = mod.name || 'New habit';
+      habits.push({ id: genId('h_'), name: addName, categoryId: catId, order: maxOrd + 1, createdAt: new Date().toISOString() });
       lsSet('hf.habits', habits);
+      showToast("Habit added: '" + tn(addName) + "'");
     } else if (src.action === 'tweak') {
       var ti = habits.findIndex(function(h) { return h.id === src.target_habit_id; });
-      if (ti !== -1 && mod.name) { habits[ti].name = mod.name; lsSet('hf.habits', habits); }
+      if (ti !== -1 && mod.name) { habits[ti].name = mod.name; lsSet('hf.habits', habits); showToast("Habit updated: '" + tn(mod.name) + "'"); }
+      else console.warn('applySuggestion: tweak had no matching target or name', { action: src.action, target_habit_id: src.target_habit_id, modification: src.modification });
     } else if (src.action === 'remove') {
+      var remHab = habits.find(function(h) { return h.id === src.target_habit_id; });
+      if (!remHab)
+        console.warn('applySuggestion: remove had no matching id', { action: src.action, target_habit_id: src.target_habit_id, modification: src.modification });
       lsSet('hf.habits', habits.filter(function(h) { return h.id !== src.target_habit_id; }));
+      if (remHab) showToast("Habit removed: '" + tn(remHab.name) + "'");
     } else if (src.action === 'condense') {
       var si = habits.findIndex(function(h) { return h.id === src.target_habit_id; });
       if (si !== -1 && mod.name) habits[si].name = mod.name;
+      else if (si === -1) console.warn('applySuggestion: condense had no matching survivor', { action: src.action, target_habit_id: src.target_habit_id, modification: src.modification });
+      var condName = si !== -1 ? habits[si].name : (mod.name || '');
       var absorb = src.absorbed_habit_ids || [];
       habits = habits.filter(function(h) { return absorb.indexOf(h.id) === -1; });
       lsSet('hf.habits', habits);
+      showToast("Habits combined: '" + tn(condName) + "'");
     }
   }
 
   document.addEventListener('click', function(e) {
-    var optApplyBtn = e.target.closest('[data-apply-sug]');   /* new format: apply a chosen option */
+    var optApplyBtn = e.target.closest('[data-apply-sug]');   /* apply a chosen option */
     var applyBtn    = e.target.closest('[data-plan-apply]');  /* old format: single apply */
-    var skipBtn     = e.target.closest('[data-plan-skip]');   /* skip (both / for today) */
-    if (!optApplyBtn && !applyBtn && !skipBtn) return;
+    var laterBtn    = e.target.closest('[data-plan-later]');  /* maybe later */
+    var skipBtn     = e.target.closest('[data-plan-skip]');   /* not for me */
+    if (!optApplyBtn && !applyBtn && !laterBtn && !skipBtn) return;
     var tv = document.getElementById('view-today');
     if (!tv || tv.classList.contains('hidden')) return;
 
-    var idx = optApplyBtn
-      ? parseInt(optApplyBtn.getAttribute('data-apply-sug'), 10)
-      : parseInt((applyBtn || skipBtn).getAttribute(applyBtn ? 'data-plan-apply' : 'data-plan-skip'), 10);
-    var YESTERDAY = dateAdd(getToday(), -1);
+    var trigger = optApplyBtn || applyBtn || laterBtn || skipBtn;
+    var attr = optApplyBtn ? 'data-apply-sug' : applyBtn ? 'data-plan-apply' : laterBtn ? 'data-plan-later' : 'data-plan-skip';
+    var idx = parseInt(trigger.getAttribute(attr), 10);
+    var TODAY = getToday();
+    /* Suggestions can come from any of the last 14 days — act on the right origin. */
+    var originDate = trigger.getAttribute('data-origin') || dateAdd(TODAY, -1);
     var d = getDays();
-    var yday = d[YESTERDAY];
-    if (!yday || !yday.aiResponse || !yday.aiResponse.suggestions || !yday.aiResponse.suggestions[idx]) return;
-    var sug = yday.aiResponse.suggestions[idx];
+    var origin = d[originDate];
+    if (!origin || !origin.aiResponse || !origin.aiResponse.suggestions || !origin.aiResponse.suggestions[idx]) return;
+    var sug = origin.aiResponse.suggestions[idx];
+
+    if (laterBtn) {
+      sug.surfaceOn = dateAdd(TODAY, 1);
+      lsSet('hf.days', d);
+      renderToday();
+      return;
+    }
 
     if (skipBtn) {
       sug.skipped = true;
@@ -1990,6 +2181,7 @@ Constraints:
     renderToday();
   });
 
+  pruneDrafts();
   renderTabs();
   showView();
   </script>
