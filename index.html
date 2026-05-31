@@ -369,7 +369,7 @@
       el.style.opacity = '1';
       el.style.transform = 'translateX(-50%) translateY(0)';
     });
-    /* Fade in 200ms, hold 1.6s, fade out 400ms (≈2.2s total). */
+    /* Fade in 200ms, hold 3.4s, fade out 400ms (≈4s total). */
     _toastHideT = setTimeout(function() {
       el.style.transition = 'opacity .4s ease, transform .4s ease';
       el.style.opacity = '0';
@@ -378,7 +378,7 @@
         if (el.parentNode) el.parentNode.removeChild(el);
         if (_toastEl === el) _toastEl = null;
       }, 400);
-    }, 1800);
+    }, 3600);
   }
 
   /* ── Reflection draft autosave helpers ───────────────────────────────────── */
