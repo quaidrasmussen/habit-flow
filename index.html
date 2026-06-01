@@ -51,11 +51,9 @@
     .seg-btn { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:9px 6px; border-radius:.55rem; font-size:13px; font-weight:600; color:rgba(var(--fg),.55); transition:color 120ms, background 120ms; }
     .seg-btn.on { background:rgba(var(--ac2),.16); color:var(--ac-hex); box-shadow:inset 0 0 0 1px rgba(var(--ac),.22); }
 
-    html { background: var(--bg); }
+    html, body { height: 100%; overflow: hidden; background: var(--bg); }
     body {
-      background: var(--bg);
       color: rgba(var(--fg),.9);
-      min-height: 100dvh;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
@@ -292,7 +290,8 @@
     ════════════════════════════════════════════ */
     /* Floating bottom pill (mobile) */
     .floatbar {
-      display:flex; align-items:center; gap:2px;
+      position: relative;
+      display:flex; align-items:center; gap:0;
       padding:5px 6px; border-radius:9999px;
       background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.06));
       backdrop-filter: blur(26px) saturate(190%);
@@ -300,16 +299,26 @@
       border: 1px solid rgba(255,255,255,.22);
       box-shadow: 0 8px 30px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.4), inset 0 -1px 1px rgba(0,0,0,.16);
     }
-    .floatbar .tab-btn { transition: color .2s ease, background .26s cubic-bezier(.22,.61,.36,1); }
+    /* Sliding glass "selector" pill — fills the active tab and slides between tabs */
+    .floatbar-ind {
+      position: absolute; top: 5px; bottom: 5px; left: 6px;
+      width: calc((100% - 12px) / 4);
+      border-radius: 9999px; z-index: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,.24), rgba(255,255,255,.1));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 2px 8px rgba(0,0,0,.18);
+      transform: translateX(0); will-change: transform; pointer-events: none;
+    }
+    :root[data-theme="light"] .floatbar-ind {
+      background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,255,255,.82));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,1), 0 2px 7px rgba(0,0,0,.1);
+    }
+    .floatbar .tab-btn { position: relative; z-index: 1; flex: 1; transition: color .2s ease; }
     .floatbar .tab-btn.toff { color: rgba(var(--fg),.5); }
-    /* Neutral "selected" highlight behind the active item; only its icon+label take the accent */
-    .floatbar .tab-btn.ton { background: rgba(255,255,255,.2); }
     :root[data-theme="light"] .floatbar {
       background: linear-gradient(180deg, rgba(255,255,255,.72), rgba(255,255,255,.55));
       border-color: rgba(0,0,0,.05);
       box-shadow: 0 8px 26px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.95), inset 0 -1px 1px rgba(0,0,0,.04);
     }
-    :root[data-theme="light"] .floatbar .tab-btn.ton { background: rgba(255,255,255,.85); }
 
     /* Subtle view entrance — replays whenever a view is un-hidden */
     @keyframes viewIn { from { opacity:0; transform: translateY(9px); } to { opacity:1; transform:none; } }
@@ -703,10 +712,10 @@
         ICONS[t.id] + '<span>' + t.label + '</span></button>';
     }).join('');
 
-    botEl.innerHTML = TABS.map(function(t) {
+    botEl.innerHTML = '<div class="floatbar-ind" id="floatbar-ind"></div>' + TABS.map(function(t) {
       var on = t.id === currentTab;
       return '<button class="tab-btn tap95 flex flex-col items-center gap-1 ' + (on ? 'ton' : 'toff') +
-        '" data-tab="' + t.id + '" style="min-width:52px;min-height:46px;font-size:10px;font-weight:500;border-radius:16px;padding:6px 2px">' +
+        '" data-tab="' + t.id + '" style="min-height:46px;font-size:10px;font-weight:500;padding:6px 2px">' +
         ICONS[t.id] + '<span>' + t.label + '</span></button>';
     }).join('');
 
@@ -714,6 +723,13 @@
       b.addEventListener('click', function() { goToTab(b.dataset.tab, true); });
     });
     syncActiveTab();
+    setIndicator(tabIndex(currentTab));
+  }
+
+  /* Position the sliding selector pill; prog is a (possibly fractional) tab index. */
+  function setIndicator(prog) {
+    var ind = document.getElementById('floatbar-ind');
+    if (ind) ind.style.transform = 'translateX(' + (prog * 100) + '%)';
   }
 
   function tabIndex(id) { for (var i = 0; i < TABS.length; i++) if (TABS[i].id === id) return i; return 0; }
@@ -736,6 +752,8 @@
     var pager = document.getElementById('pager');
     pager.scrollTo({ left: tabIndex(id) * pager.clientWidth, behavior: smooth ? 'smooth' : 'auto' });
     syncActiveTab();
+    /* On a tap (smooth) the scroll events drive the slide; on an instant jump set it now. */
+    if (!smooth) setIndicator(tabIndex(id));
   }
 
   /* Render every page once; switching tabs just slides — no re-render, no lag. */
@@ -755,8 +773,10 @@
       ticking = true;
       requestAnimationFrame(function() {
         ticking = false;
-        var i = Math.round(pager.scrollLeft / pager.clientWidth);
-        var id = (TABS[i] || TABS[0]).id;
+        var prog = pager.clientWidth ? pager.scrollLeft / pager.clientWidth : 0;
+        prog = Math.max(0, Math.min(TABS.length - 1, prog));
+        setIndicator(prog);                       // selector follows the swipe in real time
+        var id = (TABS[Math.round(prog)] || TABS[0]).id;
         if (id !== currentTab) { currentTab = id; syncActiveTab(); }
       });
     }, { passive: true });
