@@ -52,7 +52,10 @@
     .seg-btn.on { background:rgba(var(--ac2),.16); color:var(--ac-hex); box-shadow:inset 0 0 0 1px rgba(var(--ac),.22); }
 
     html, body { height: 100%; overflow: hidden; background: var(--bg); }
+    /* Lock the body to the full screen (incl. the bottom safe-area) so the theme
+       background paints edge-to-edge — no blank band behind the home indicator. */
     body {
+      position: fixed; inset: 0;
       color: rgba(var(--fg),.9);
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       -webkit-font-smoothing: antialiased;
