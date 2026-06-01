@@ -8,7 +8,7 @@ Two users on two devices, with completely separate localStorage. There's no back
 
 ## Design philosophy
 - **Calm liquid glass aesthetic** — soft translucency, backdrop blur, rounded surfaces, low-contrast layering, subtle animated background glows. Pure CSS, no libraries.
-- **Dark mode** as the home base. No light mode planned.
+- **Dark mode** is the home base (default). **Light** and **System** themes are available via a segmented toggle in Settings; the color layer is tokenized with CSS variables (`--fg`, `--ac`, `--bg`, etc.) so themes flip cleanly.
 - **Calm-mentor tone** everywhere: supportive, non-judgmental, never hype or shame, never toxic positivity, never hustle-culture phrasing. Treat the user as a capable adult.
 - **Designed to be low-friction and low-overwhelm** (clear focus, minimal choices, no nagging) — but never labeled or described that way in the UI.
 - **No emojis except the streak flame (🔥).** Don't suggest adding others.
@@ -43,7 +43,7 @@ Top-level keys, all prefixed `hf.`:
 5. **Modal/overlay system is shared.** There's one `#hf-overlay` and `#hf-modal` element pair. Don't create parallel modal systems.
 
 ## Current major features
-- Tab navigation (Today / Habits / Progress)
+- Tab navigation (Today / Habits / Progress / Settings). Mobile uses a floating glass pill; desktop uses a top bar. Settings is its own view (not a modal).
 - Custom habits & categories with full CRUD (add, rename inline, delete, reorder, drag-to-reorder on desktop)
 - End-of-day review flow with sealing logic (no sliders — three short-answer textareas, locks the day on submit)
 - AI coach: reflection-driven output of **2 insights, each with 2 application options**. Three states per suggestion: Apply / Maybe later / Not for me. "Maybe later" surfaces the suggestion again on a future day via a `surfaceOn` field.
@@ -61,7 +61,6 @@ Top-level keys, all prefixed `hf.`:
 - Sliders (these were intentionally removed in favor of textareas)
 - Archiving system (delete is the only "off" state for habits)
 - Export / import
-- Light mode
 - Habit "favorites" or pinning
 - Per-habit streak counters
 - Stats dashboards beyond what's there

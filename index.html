@@ -94,12 +94,12 @@
     /* ── Glass card ── */
     .glass {
       position: relative;
-      background: rgba(var(--fg),.045);
-      backdrop-filter: blur(20px) saturate(140%);
-      -webkit-backdrop-filter: blur(20px) saturate(140%);
-      border: 1px solid rgba(var(--fg),.08);
-      box-shadow: 0 8px 32px rgba(0,0,0,.4), inset 0 1px 0 rgba(var(--fg),.08);
-      border-radius: 1rem;
+      background: linear-gradient(180deg, rgba(var(--fg),.06), rgba(var(--fg),.03));
+      backdrop-filter: blur(28px) saturate(180%);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      border: 1px solid rgba(var(--fg),.09);
+      box-shadow: 0 10px 36px rgba(0,0,0,.42), inset 0 1px 0 rgba(var(--fg),.11);
+      border-radius: 1.1rem;
     }
     .glass::before {
       content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px;
@@ -174,7 +174,7 @@
     @media (max-width: 767px)  {
       .lpad {
         padding-top: max(env(safe-area-inset-top), 12px);
-        padding-bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+        padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
       }
     }
     /* Desktop/tablet: fixed top bar handles the top; add a bottom breathing
@@ -285,6 +285,41 @@
     .hf-switch .sl::before { content:''; position:absolute; height:20px; width:20px; left:3px; top:3px; background:#fff; border-radius:50%; transition:transform 160ms; box-shadow:0 1px 3px rgba(0,0,0,.4); }
     .hf-switch input:checked + .sl { background:var(--ac2-hex); }
     .hf-switch input:checked + .sl::before { transform:translateX(18px); }
+
+    /* ════════════════════════════════════════════
+       LIQUID-GLASS POLISH (material + motion)
+    ════════════════════════════════════════════ */
+    /* Floating bottom pill (mobile) */
+    .floatbar {
+      display:flex; align-items:center; gap:3px;
+      padding:7px 9px; border-radius:9999px;
+      background: rgba(var(--tbar),.7);
+      backdrop-filter: blur(30px) saturate(180%);
+      -webkit-backdrop-filter: blur(30px) saturate(180%);
+      border: 1px solid rgba(var(--fg),.1);
+      box-shadow: 0 12px 38px rgba(0,0,0,.5), inset 0 1px 0 rgba(var(--fg),.14);
+    }
+    .floatbar .tab-btn { transition: color .22s ease, background .28s cubic-bezier(.22,.61,.36,1); }
+    .floatbar .tab-btn.ton { background: rgba(var(--ac2),.16); }
+    :root[data-theme="light"] .floatbar {
+      box-shadow: 0 10px 30px rgba(0,0,0,.14), inset 0 1px 0 rgba(255,255,255,.7);
+    }
+
+    /* Subtle view entrance — replays whenever a view is un-hidden */
+    @keyframes viewIn { from { opacity:0; transform: translateY(9px); } to { opacity:1; transform:none; } }
+    .viewwrap:not(.hidden) { animation: viewIn .34s cubic-bezier(.22,.61,.36,1) both; }
+
+    /* Springy tactile release on tap targets (press stays quick) */
+    .tap95, .tap97, .tap98 { transition: transform .16s cubic-bezier(.34,1.5,.64,1); }
+
+    /* Richer frosted material on the pill row + glass pill */
+    .gpill { backdrop-filter: blur(26px) saturate(180%); -webkit-backdrop-filter: blur(26px) saturate(180%); }
+    .tbar  { backdrop-filter: blur(30px) saturate(180%); -webkit-backdrop-filter: blur(30px) saturate(180%); }
+
+    @media (prefers-reduced-motion: reduce) {
+      .viewwrap:not(.hidden) { animation: none; }
+      .tap95, .tap97, .tap98 { transition: none; }
+    }
   </style>
   <script>
     /* Apply the saved theme before first paint to avoid a flash of the wrong one. */
@@ -303,7 +338,6 @@
 <body>
   <div class="glow-a" aria-hidden="true"></div>
   <div class="glow-b" aria-hidden="true"></div>
-  <button id="hf-gear" aria-label="Settings" class="tap95" style="position:fixed;top:max(14px,env(safe-area-inset-top));right:16px;z-index:50;width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(var(--fg),.06);backdrop-filter:blur(20px) saturate(140%);-webkit-backdrop-filter:blur(20px) saturate(140%);border:1px solid rgba(var(--fg),.1);box-shadow:0 4px 16px rgba(0,0,0,.3);color:rgba(var(--fg),.55)"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
 
   <!-- Desktop top tab bar -->
   <nav class="hidden md:block fixed top-0 inset-x-0 z-40 tbar" style="border-bottom:1px solid rgba(var(--fg),.07)">
@@ -313,16 +347,16 @@
   <!-- Scrollable content -->
   <div class="relative z-10 lpad">
     <div class="max-w-lg mx-auto px-4 pt-6">
-      <div id="view-today"></div>
-      <div id="view-habits"   class="hidden"></div>
-      <div id="view-progress" class="hidden"></div>
+      <div id="view-today" class="viewwrap"></div>
+      <div id="view-habits"   class="viewwrap hidden"></div>
+      <div id="view-progress" class="viewwrap hidden"></div>
+      <div id="view-settings" class="viewwrap hidden"></div>
     </div>
   </div>
 
-  <!-- Mobile bottom tab bar -->
-  <nav class="md:hidden fixed bottom-0 inset-x-0 z-40 tbar" style="border-top:1px solid rgba(var(--fg),.07)">
-    <div class="flex justify-around px-4" id="bottom-tabs"
-      style="padding-top:10px;padding-bottom:max(12px,env(safe-area-inset-bottom))"></div>
+  <!-- Mobile bottom tab bar (floating glass pill) -->
+  <nav class="md:hidden fixed z-40" style="left:0;right:0;bottom:max(14px,env(safe-area-inset-bottom));display:flex;justify-content:center;pointer-events:none">
+    <div class="floatbar" id="bottom-tabs" style="pointer-events:auto"></div>
   </nav>
 
   <!-- Modal overlay (Chunk 2) -->
@@ -509,6 +543,27 @@
     return lsGet('hf.settings') || { sortMode: 'category', overallStreak: 0, longestStreak: 0, categoryStreaks: {}, devMode: false, dateOverride: null, theme: 'dark' };
   }
 
+  /* ── Leaving dev mode ────────────────────────────────────────────────────────
+     Drop the date override (return to the real day), delete the throwaway days
+     created by advancing forward (anything dated after real today), and unseal
+     the real today so it's editable again — keeping whatever data is on it.
+     Mutates and returns the passed settings object (caller persists it). */
+  function cleanupDevState(s2) {
+    s2.dateOverride = null;
+    var realToday = todayISO();
+    var d = getDays(), changed = false;
+    Object.keys(d).forEach(function(k) {
+      if (k > realToday) { delete d[k]; changed = true; }   // future dev-test days
+    });
+    if (d[realToday] && d[realToday].submitted) {
+      d[realToday].submitted = false;
+      d[realToday].sealedAt = null;
+      changed = true;
+    }
+    if (changed) lsSet('hf.days', d);
+    return s2;
+  }
+
   /* ── "Today" resolution (honours dev-mode date override) ───────────────────
      Returns the simulated "today" when an override is set, otherwise the real
      local calendar date. Every date-relative computation flows through this so
@@ -592,13 +647,18 @@
     progress:
       '<svg class="tico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>' +
-      '<line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>'
+      '<line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>',
+    settings:
+      '<svg class="tico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<circle cx="12" cy="12" r="3"/>' +
+      '<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'
   };
 
   var TABS = [
     { id: 'today',    label: 'Today' },
     { id: 'habits',   label: 'Habits' },
-    { id: 'progress', label: 'Progress' }
+    { id: 'progress', label: 'Progress' },
+    { id: 'settings', label: 'Settings' }
   ];
 
   /* ── Tab navigation ──────────────────────────────────────────────────────── */
@@ -616,7 +676,7 @@
     botEl.innerHTML = TABS.map(function(t) {
       var on = t.id === currentTab;
       return '<button class="tab-btn tap95 flex flex-col items-center gap-1 ' + (on ? 'ton' : 'toff') +
-        '" data-tab="' + t.id + '" style="min-width:60px;min-height:48px;font-size:11px;font-weight:500">' +
+        '" data-tab="' + t.id + '" style="min-width:52px;min-height:46px;font-size:10px;font-weight:500;border-radius:16px;padding:6px 2px">' +
         ICONS[t.id] + '<span>' + t.label + '</span></button>';
     }).join('');
 
@@ -630,22 +690,16 @@
   }
 
   function showView() {
-    ['today', 'habits', 'progress'].forEach(function(id) {
+    ['today', 'habits', 'progress', 'settings'].forEach(function(id) {
       document.getElementById('view-' + id).classList.toggle('hidden', id !== currentTab);
     });
     if (currentTab === 'today')    renderToday();
     if (currentTab === 'habits')   renderHabitsView();
     if (currentTab === 'progress') renderProgressView();
+    if (currentTab === 'settings') renderSettingsView();
   }
 
   /* ── Today view helpers ──────────────────────────────────────────────────── */
-  function sortBtn(mode, label, current) {
-    var on = mode === current;
-    return '<button class="sort-btn tap97' + (on ? ' son' : '') +
-      '" data-mode="' + mode + '" style="border-radius:9999px;padding:8px 18px;font-size:13px;font-weight:500;min-height:36px;' +
-      'color:' + (on ? 'var(--ac-hex)' : 'rgba(var(--fg),.42)') + '">' + label + '</button>';
-  }
-
   function habitRow(habit, done, showDot, cat) {
     var check = done
       ? '<div style="width:24px;height:24px;border-radius:50%;background:var(--ac2-hex);border:2px solid var(--ac2-hex);display:flex;align-items:center;justify-content:center;flex-shrink:0">' + checkSVG() + '</div>'
@@ -940,21 +994,8 @@
       '<div class="noscroll" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;margin-bottom:20px">' +
         pillsHTML +
       '</div>' +
-      '<div class="gpill" style="display:inline-flex;padding:4px;gap:4px;margin-bottom:20px">' +
-        sortBtn('category', 'By category', sm) +
-        sortBtn('order', 'Chronological', sm) +
-      '</div>' +
       lockHTML + '<div id="hlist" style="margin-bottom:24px">' + habitsHTML + '</div>' +
       eodHTML;
-
-    view.querySelectorAll('.sort-btn').forEach(function(b) {
-      b.addEventListener('click', function() {
-        var s2 = getSettings();
-        s2.sortMode = b.dataset.mode;
-        lsSet('hf.settings', s2);
-        renderToday();
-      });
-    });
 
     var sealBtn = document.getElementById('seal-btn');
     if (sealBtn) sealBtn.addEventListener('click', sealDay);
@@ -1744,9 +1785,9 @@
   var calMonth = (function() { var p = getToday().split('-').map(Number); return { y: p[0], m: p[1] - 1 }; })();
 
   /* ── Settings modal (API key) ──────────────────────────────────────────── */
-  function openSettingsModal() {
+  function renderSettingsView() {
     /* Persist whatever is currently typed in the API key field (so re-painting
-       the modal on a dev-mode toggle doesn't drop an unsaved key). */
+       the view on a dev-mode toggle doesn't drop an unsaved key). */
     function persistKeyField(s2) {
       var keyEl = document.getElementById('hf-apikey');
       if (keyEl) s2.apiKey = (keyEl.value || '').trim();
@@ -1791,14 +1832,7 @@
         '<div style="height:1px;background:rgba(var(--fg),.08);margin:22px 0 14px"></div>' +
         '<p style="color:rgba(var(--fg),.3);font-size:12px;text-align:center">Habit Flow v' + APP_VERSION + ' · Updated ' + fmtMonthDayYear(APP_UPDATED) + '</p>';
 
-      var modal = document.getElementById('hf-modal');
-      var overlay = document.getElementById('hf-overlay');
-      if (!modal || overlay.classList.contains('hidden')) {
-        openModal(html);
-        modal = document.getElementById('hf-modal');
-      } else {
-        modal.innerHTML = html;
-      }
+      document.getElementById('view-settings').innerHTML = html;
 
       document.getElementById('hf-save-key').addEventListener('click', function() {
         var keyEl = document.getElementById('hf-apikey');
@@ -1811,7 +1845,7 @@
           if (warn) warn.textContent = 'That doesn\'t look like an Anthropic API key — they usually start with sk-ant-';
           return;
         }
-        closeModal();
+        showToast('Saved');
       });
 
       var seg = document.getElementById('hf-theme-seg');
@@ -1829,6 +1863,7 @@
       tog.addEventListener('change', function() {
         var s2 = persistKeyField(getSettings());
         s2.devMode = tog.checked;
+        if (!tog.checked) cleanupDevState(s2);   // leaving dev mode → back to real today
         lsSet('hf.settings', s2);
         paint();
         reRenderAll();
@@ -1837,7 +1872,7 @@
       var rb = document.getElementById('hf-reset-today');
       if (rb) rb.addEventListener('click', function() {
         var s2 = persistKeyField(getSettings());
-        s2.dateOverride = null;
+        cleanupDevState(s2);
         lsSet('hf.settings', s2);
         paint();
         reRenderAll();
@@ -1954,7 +1989,7 @@
   });
 
   /* ── Settings gear ─────────────────────────────────────────────────────── */
-  document.getElementById('hf-gear').addEventListener('click', openSettingsModal);
+  function goToSettings() { currentTab = 'settings'; renderTabs(); showView(); }
 
   /* ── AI Coach ──────────────────────────────────────────────────────────── */
   var COACH_SYSTEM = `You are a wise, exacting coach with deep expertise in behavior change, habit formation, exercise physiology, nutrition, sleep science, and applied psychology. Your role is to read a user's habit regimen, their daily reflection, and their recent compliance history, then propose exactly 2 high-impact INSIGHTS. For each insight, you provide exactly 2 different concrete ways the user could apply it to their habit list, approaching the same problem from different angles.
@@ -2103,7 +2138,7 @@ Constraints:
       coachTeaser('<p style="color:rgba(var(--fg),.6);font-size:14px;line-height:1.5">Set your API key in Settings to get coach suggestions. ' +
         '<button id="coach-open-settings" style="color:var(--ac-hex);font-weight:600;text-decoration:underline">Open Settings</button></p>');
       var os = document.getElementById('coach-open-settings');
-      if (os) os.addEventListener('click', openSettingsModal);
+      if (os) os.addEventListener('click', goToSettings);
       return;
     }
 
