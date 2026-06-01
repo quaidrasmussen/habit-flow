@@ -292,7 +292,7 @@
     .floatbar {
       position: relative;
       display:flex; align-items:center; gap:0;
-      padding:7px 8px; border-radius:9999px;
+      padding:6px 8px; border-radius:9999px;
       background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.06));
       backdrop-filter: blur(26px) saturate(190%);
       -webkit-backdrop-filter: blur(26px) saturate(190%);
@@ -303,7 +303,7 @@
        left + the subtracted px must equal the floatbar horizontal padding so it
        stays centered on each tab. */
     .floatbar-ind {
-      position: absolute; top: 7px; bottom: 7px; left: 8px;
+      position: absolute; top: 6px; bottom: 6px; left: 8px;
       width: calc((100% - 16px) / 4);
       border-radius: 9999px; z-index: 0;
       background: linear-gradient(180deg, rgba(255,255,255,.24), rgba(255,255,255,.1));
@@ -353,7 +353,7 @@
     @media (max-width: 767px) {
       .page-inner {
         padding-top: calc(24px + max(env(safe-area-inset-top), 12px));
-        padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+        padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
       }
     }
     @media (min-width: 768px) {
@@ -717,8 +717,8 @@
 
     botEl.innerHTML = '<div class="floatbar-ind" id="floatbar-ind"></div>' + TABS.map(function(t) {
       var on = t.id === currentTab;
-      return '<button class="tab-btn tap95 flex flex-col items-center gap-1 ' + (on ? 'ton' : 'toff') +
-        '" data-tab="' + t.id + '" style="min-height:58px;font-size:12px;font-weight:500;padding:8px 16px">' +
+      return '<button class="tab-btn tap95 flex flex-col items-center gap-0.5 ' + (on ? 'ton' : 'toff') +
+        '" data-tab="' + t.id + '" style="min-height:50px;font-size:12px;font-weight:500;padding:5px 16px">' +
         ICONS[t.id] + '<span>' + t.label + '</span></button>';
     }).join('');
 
