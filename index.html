@@ -95,10 +95,10 @@
     .glass {
       position: relative;
       background: linear-gradient(180deg, rgba(var(--fg),.06), rgba(var(--fg),.03));
-      backdrop-filter: blur(28px) saturate(180%);
-      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      backdrop-filter: blur(20px) saturate(160%);
+      -webkit-backdrop-filter: blur(20px) saturate(160%);
       border: 1px solid rgba(var(--fg),.09);
-      box-shadow: 0 10px 36px rgba(0,0,0,.42), inset 0 1px 0 rgba(var(--fg),.11);
+      box-shadow: 0 10px 30px rgba(0,0,0,.38), inset 0 1px 0 rgba(var(--fg),.12);
       border-radius: 1.1rem;
     }
     .glass::before {
@@ -292,17 +292,19 @@
     /* Floating bottom pill (mobile) */
     .floatbar {
       display:flex; align-items:center; gap:3px;
-      padding:7px 9px; border-radius:9999px;
-      background: rgba(var(--tbar),.7);
-      backdrop-filter: blur(30px) saturate(180%);
-      -webkit-backdrop-filter: blur(30px) saturate(180%);
-      border: 1px solid rgba(var(--fg),.1);
-      box-shadow: 0 12px 38px rgba(0,0,0,.5), inset 0 1px 0 rgba(var(--fg),.14);
+      padding:6px 8px; border-radius:9999px;
+      background: linear-gradient(180deg, rgba(255,255,255,.13), rgba(255,255,255,.05));
+      backdrop-filter: blur(24px) saturate(190%);
+      -webkit-backdrop-filter: blur(24px) saturate(190%);
+      border: 1px solid rgba(255,255,255,.18);
+      box-shadow: 0 10px 34px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.32), inset 0 -1px 1px rgba(0,0,0,.18);
     }
-    .floatbar .tab-btn { transition: color .22s ease, background .28s cubic-bezier(.22,.61,.36,1); }
-    .floatbar .tab-btn.ton { background: rgba(var(--ac2),.16); }
+    .floatbar .tab-btn { border-radius:9999px; transition: color .22s ease, background .28s cubic-bezier(.22,.61,.36,1); }
+    .floatbar .tab-btn.ton { background: rgba(var(--ac2),.18); }
     :root[data-theme="light"] .floatbar {
-      box-shadow: 0 10px 30px rgba(0,0,0,.14), inset 0 1px 0 rgba(255,255,255,.7);
+      background: linear-gradient(180deg, rgba(255,255,255,.8), rgba(255,255,255,.64));
+      border-color: rgba(0,0,0,.06);
+      box-shadow: 0 10px 28px rgba(0,0,0,.13), inset 0 1px 0 rgba(255,255,255,.9), inset 0 -1px 1px rgba(0,0,0,.04);
     }
 
     /* Subtle view entrance — replays whenever a view is un-hidden */
@@ -313,8 +315,34 @@
     .tap95, .tap97, .tap98 { transition: transform .16s cubic-bezier(.34,1.5,.64,1); }
 
     /* Richer frosted material on the pill row + glass pill */
-    .gpill { backdrop-filter: blur(26px) saturate(180%); -webkit-backdrop-filter: blur(26px) saturate(180%); }
-    .tbar  { backdrop-filter: blur(30px) saturate(180%); -webkit-backdrop-filter: blur(30px) saturate(180%); }
+    .gpill { backdrop-filter: blur(20px) saturate(170%); -webkit-backdrop-filter: blur(20px) saturate(170%); }
+    .tbar  { backdrop-filter: blur(22px) saturate(170%); -webkit-backdrop-filter: blur(22px) saturate(170%); }
+
+    /* ── Horizontal swipe pager (one page per tab) ── */
+    .pager {
+      position: fixed; inset: 0; z-index: 10;
+      display: flex;
+      overflow-x: auto; overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+    .page {
+      flex: 0 0 100%; width: 100%; height: 100%;
+      overflow-y: auto; overflow-x: hidden;
+      scroll-snap-align: start; scroll-snap-stop: always;
+      -webkit-overflow-scrolling: touch;
+    }
+    .page-inner { max-width: 32rem; margin: 0 auto; padding: 24px 16px; }
+    @media (max-width: 767px) {
+      .page-inner {
+        padding-top: calc(24px + max(env(safe-area-inset-top), 12px));
+        padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+      }
+    }
+    @media (min-width: 768px) {
+      .page-inner { padding-top: 86px; padding-bottom: max(env(safe-area-inset-bottom), 16px); }
+    }
 
     @media (prefers-reduced-motion: reduce) {
       .viewwrap:not(.hidden) { animation: none; }
@@ -344,14 +372,12 @@
     <div class="max-w-lg mx-auto px-4 py-3 flex gap-1" id="top-tabs"></div>
   </nav>
 
-  <!-- Scrollable content -->
-  <div class="relative z-10 lpad">
-    <div class="max-w-lg mx-auto px-4 pt-6">
-      <div id="view-today" class="viewwrap"></div>
-      <div id="view-habits"   class="viewwrap hidden"></div>
-      <div id="view-progress" class="viewwrap hidden"></div>
-      <div id="view-settings" class="viewwrap hidden"></div>
-    </div>
+  <!-- Horizontal swipe pager — one page per tab, in TABS order -->
+  <div id="pager" class="pager noscroll">
+    <div class="page noscroll"><div class="page-inner" id="view-today"></div></div>
+    <div class="page noscroll"><div class="page-inner" id="view-progress"></div></div>
+    <div class="page noscroll"><div class="page-inner" id="view-habits"></div></div>
+    <div class="page noscroll"><div class="page-inner" id="view-settings"></div></div>
   </div>
 
   <!-- Mobile bottom tab bar (floating glass pill) -->
@@ -656,8 +682,8 @@
 
   var TABS = [
     { id: 'today',    label: 'Today' },
-    { id: 'habits',   label: 'Habits' },
     { id: 'progress', label: 'Progress' },
+    { id: 'habits',   label: 'Habits' },
     { id: 'settings', label: 'Settings' }
   ];
 
@@ -681,22 +707,58 @@
     }).join('');
 
     document.querySelectorAll('.tab-btn').forEach(function(b) {
-      b.addEventListener('click', function() {
-        currentTab = b.dataset.tab;
-        renderTabs();
-        showView();
-      });
+      b.addEventListener('click', function() { goToTab(b.dataset.tab, true); });
+    });
+    syncActiveTab();
+  }
+
+  function tabIndex(id) { for (var i = 0; i < TABS.length; i++) if (TABS[i].id === id) return i; return 0; }
+
+  /* Toggle active styling on the existing tab buttons without rebuilding them. */
+  function syncActiveTab() {
+    document.querySelectorAll('#top-tabs .tab-btn').forEach(function(b) {
+      var on = b.dataset.tab === currentTab;
+      b.classList.toggle('ton', on); b.classList.toggle('son', on); b.classList.toggle('toff', !on);
+    });
+    document.querySelectorAll('#bottom-tabs .tab-btn').forEach(function(b) {
+      var on = b.dataset.tab === currentTab;
+      b.classList.toggle('ton', on); b.classList.toggle('toff', !on);
     });
   }
 
-  function showView() {
-    ['today', 'habits', 'progress', 'settings'].forEach(function(id) {
-      document.getElementById('view-' + id).classList.toggle('hidden', id !== currentTab);
+  /* Slide the pager to a tab's page (tapping the bar swipes over to it). */
+  function goToTab(id, smooth) {
+    currentTab = id;
+    var pager = document.getElementById('pager');
+    pager.scrollTo({ left: tabIndex(id) * pager.clientWidth, behavior: smooth ? 'smooth' : 'auto' });
+    syncActiveTab();
+  }
+
+  /* Render every page once; switching tabs just slides — no re-render, no lag. */
+  function renderAllPages() {
+    renderToday();
+    renderProgressView();
+    renderHabitsView();
+    renderSettingsView();
+  }
+
+  /* Keep the active tab highlighted as the user swipes between pages. */
+  function setupPager() {
+    var pager = document.getElementById('pager');
+    var ticking = false;
+    pager.addEventListener('scroll', function() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(function() {
+        ticking = false;
+        var i = Math.round(pager.scrollLeft / pager.clientWidth);
+        var id = (TABS[i] || TABS[0]).id;
+        if (id !== currentTab) { currentTab = id; syncActiveTab(); }
+      });
+    }, { passive: true });
+    window.addEventListener('resize', function() {
+      pager.scrollLeft = tabIndex(currentTab) * pager.clientWidth;
     });
-    if (currentTab === 'today')    renderToday();
-    if (currentTab === 'habits')   renderHabitsView();
-    if (currentTab === 'progress') renderProgressView();
-    if (currentTab === 'settings') renderSettingsView();
   }
 
   /* ── Today view helpers ──────────────────────────────────────────────────── */
@@ -1615,7 +1677,6 @@
         '<div style="width:1px;height:14px;background:rgba(var(--fg),.1);margin:0 2px;flex-shrink:0"></div>' +
         '<button data-action="cat-rename"    data-cat-id="' + cat.id + '" class="icbtn em"   title="Rename">' + IC.pencil + '</button>' +
         '<button data-action="cat-del"       data-cat-id="' + cat.id + '" class="icbtn rose" title="Delete category">' + IC.trash + '</button>' +
-        '<button data-action="cat-add-habit" data-cat-id="' + cat.id + '" class="icbtn em"   title="Add habit">' + IC.plus + '</button>' +
       '</div>';
 
     var rows = catHabs.map(function(hab, hi) {
@@ -1636,20 +1697,15 @@
     var habits = getHabits();
 
     var topStrip =
-      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">' +
-        '<h2 style="color:rgba(var(--fg),.9);font-size:20px;font-weight:600">Habits</h2>' +
-        '<button data-action="add-habit" class="tap97" style="display:flex;align-items:center;gap:6px;background:rgba(var(--ac2),.12);border:1px solid rgba(var(--ac),.2);color:var(--ac-hex);font-size:13px;font-weight:600;padding:8px 16px;border-radius:9999px">' +
-          IC.plus + 'Add Habit' +
-        '</button>' +
-      '</div>';
+      '<h2 style="color:rgba(var(--fg),.9);font-size:20px;font-weight:600;margin-bottom:24px">Habits</h2>';
 
     var sections;
-    if (!habits.length) {
-      /* Edge case: everything was deleted. The "+ Add Habit" button stays in the
-         top strip; just offer a gentle nudge instead of empty category shells. */
+    if (!cats.length) {
+      /* With no categories there's nothing to group under — nudge toward adding
+         one. When categories exist, each renders its own "+ Add habit" button. */
       sections =
         '<div style="text-align:center;padding:48px 16px 40px">' +
-          '<p style="color:rgba(var(--fg),.4);font-size:14px;line-height:1.6">Add your first habit to get started.</p>' +
+          '<p style="color:rgba(var(--fg),.4);font-size:14px;line-height:1.6">Add a category to get started.</p>' +
         '</div>';
     } else {
       sections = cats.map(function(cat, ci) {
@@ -1989,7 +2045,7 @@
   });
 
   /* ── Settings gear ─────────────────────────────────────────────────────── */
-  function goToSettings() { currentTab = 'settings'; renderTabs(); showView(); }
+  function goToSettings() { goToTab('settings', true); }
 
   /* ── AI Coach ──────────────────────────────────────────────────────────── */
   var COACH_SYSTEM = `You are a wise, exacting coach with deep expertise in behavior change, habit formation, exercise physiology, nutrition, sleep science, and applied psychology. Your role is to read a user's habit regimen, their daily reflection, and their recent compliance history, then propose exactly 2 high-impact INSIGHTS. For each insight, you provide exactly 2 different concrete ways the user could apply it to their habit list, approaching the same problem from different angles.
@@ -2306,8 +2362,10 @@ Constraints:
 
   applyTheme();
   pruneDrafts();
+  renderAllPages();
   renderTabs();
-  showView();
+  setupPager();
+  goToTab('today', false);
   </script>
 </body>
 </html>

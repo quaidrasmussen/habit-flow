@@ -43,7 +43,7 @@ Top-level keys, all prefixed `hf.`:
 5. **Modal/overlay system is shared.** There's one `#hf-overlay` and `#hf-modal` element pair. Don't create parallel modal systems.
 
 ## Current major features
-- Tab navigation (Today / Habits / Progress / Settings). Mobile uses a floating glass pill; desktop uses a top bar. Settings is its own view (not a modal).
+- Tab navigation (Today / Progress / Habits / Settings) as a **horizontal swipe pager** — the four views sit side by side; swipe or tap the bar to slide between them. Pages render once on boot (no per-switch re-render), so switching is lag-free; data changes re-render individual pages in place. Mobile uses a floating **liquid-glass pill**; desktop uses a top bar. Settings is its own view (not a modal).
 - Custom habits & categories with full CRUD (add, rename inline, delete, reorder, drag-to-reorder on desktop)
 - End-of-day review flow with sealing logic (no sliders — three short-answer textareas, locks the day on submit)
 - AI coach: reflection-driven output of **2 insights, each with 2 application options**. Three states per suggestion: Apply / Maybe later / Not for me. "Maybe later" surfaces the suggestion again on a future day via a `surfaceOn` field.
