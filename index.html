@@ -51,6 +51,7 @@
     .seg-btn { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:9px 6px; border-radius:.55rem; font-size:13px; font-weight:600; color:rgba(var(--fg),.55); transition:color 120ms, background 120ms; }
     .seg-btn.on { background:rgba(var(--ac2),.16); color:var(--ac-hex); box-shadow:inset 0 0 0 1px rgba(var(--ac),.22); }
 
+    html { background: var(--bg); }
     body {
       background: var(--bg);
       color: rgba(var(--fg),.9);
@@ -291,21 +292,24 @@
     ════════════════════════════════════════════ */
     /* Floating bottom pill (mobile) */
     .floatbar {
-      display:flex; align-items:center; gap:3px;
-      padding:6px 8px; border-radius:9999px;
-      background: linear-gradient(180deg, rgba(255,255,255,.13), rgba(255,255,255,.05));
-      backdrop-filter: blur(24px) saturate(190%);
-      -webkit-backdrop-filter: blur(24px) saturate(190%);
-      border: 1px solid rgba(255,255,255,.18);
-      box-shadow: 0 10px 34px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.32), inset 0 -1px 1px rgba(0,0,0,.18);
+      display:flex; align-items:center; gap:2px;
+      padding:5px 6px; border-radius:9999px;
+      background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.06));
+      backdrop-filter: blur(26px) saturate(190%);
+      -webkit-backdrop-filter: blur(26px) saturate(190%);
+      border: 1px solid rgba(255,255,255,.22);
+      box-shadow: 0 8px 30px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.4), inset 0 -1px 1px rgba(0,0,0,.16);
     }
-    .floatbar .tab-btn { border-radius:9999px; transition: color .22s ease, background .28s cubic-bezier(.22,.61,.36,1); }
-    .floatbar .tab-btn.ton { background: rgba(var(--ac2),.18); }
+    .floatbar .tab-btn { transition: color .2s ease, background .26s cubic-bezier(.22,.61,.36,1); }
+    .floatbar .tab-btn.toff { color: rgba(var(--fg),.5); }
+    /* Neutral "selected" highlight behind the active item; only its icon+label take the accent */
+    .floatbar .tab-btn.ton { background: rgba(255,255,255,.2); }
     :root[data-theme="light"] .floatbar {
-      background: linear-gradient(180deg, rgba(255,255,255,.8), rgba(255,255,255,.64));
-      border-color: rgba(0,0,0,.06);
-      box-shadow: 0 10px 28px rgba(0,0,0,.13), inset 0 1px 0 rgba(255,255,255,.9), inset 0 -1px 1px rgba(0,0,0,.04);
+      background: linear-gradient(180deg, rgba(255,255,255,.72), rgba(255,255,255,.55));
+      border-color: rgba(0,0,0,.05);
+      box-shadow: 0 8px 26px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.95), inset 0 -1px 1px rgba(0,0,0,.04);
     }
+    :root[data-theme="light"] .floatbar .tab-btn.ton { background: rgba(255,255,255,.85); }
 
     /* Subtle view entrance — replays whenever a view is un-hidden */
     @keyframes viewIn { from { opacity:0; transform: translateY(9px); } to { opacity:1; transform:none; } }
@@ -337,7 +341,7 @@
     @media (max-width: 767px) {
       .page-inner {
         padding-top: calc(24px + max(env(safe-area-inset-top), 12px));
-        padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+        padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
       }
     }
     @media (min-width: 768px) {
@@ -381,7 +385,7 @@
   </div>
 
   <!-- Mobile bottom tab bar (floating glass pill) -->
-  <nav class="md:hidden fixed z-40" style="left:0;right:0;bottom:max(14px,env(safe-area-inset-bottom));display:flex;justify-content:center;pointer-events:none">
+  <nav class="md:hidden fixed z-40" style="left:0;right:0;bottom:max(8px,calc(env(safe-area-inset-bottom) - 6px));display:flex;justify-content:center;pointer-events:none">
     <div class="floatbar" id="bottom-tabs" style="pointer-events:auto"></div>
   </nav>
 
