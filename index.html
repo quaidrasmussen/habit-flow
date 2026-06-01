@@ -292,17 +292,19 @@
     .floatbar {
       position: relative;
       display:flex; align-items:center; gap:0;
-      padding:5px 6px; border-radius:9999px;
+      padding:7px 8px; border-radius:9999px;
       background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.06));
       backdrop-filter: blur(26px) saturate(190%);
       -webkit-backdrop-filter: blur(26px) saturate(190%);
       border: 1px solid rgba(255,255,255,.22);
       box-shadow: 0 8px 30px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.4), inset 0 -1px 1px rgba(0,0,0,.16);
     }
-    /* Sliding glass "selector" pill — fills the active tab and slides between tabs */
+    /* Sliding glass "selector" pill — fills the active tab and slides between tabs.
+       left + the subtracted px must equal the floatbar horizontal padding so it
+       stays centered on each tab. */
     .floatbar-ind {
-      position: absolute; top: 5px; bottom: 5px; left: 6px;
-      width: calc((100% - 12px) / 4);
+      position: absolute; top: 7px; bottom: 7px; left: 8px;
+      width: calc((100% - 16px) / 4);
       border-radius: 9999px; z-index: 0;
       background: linear-gradient(180deg, rgba(255,255,255,.24), rgba(255,255,255,.1));
       box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 2px 8px rgba(0,0,0,.18);
@@ -312,8 +314,9 @@
       background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,255,255,.82));
       box-shadow: inset 0 1px 0 rgba(255,255,255,1), 0 2px 7px rgba(0,0,0,.1);
     }
-    .floatbar .tab-btn { position: relative; z-index: 1; flex: 1; transition: color .2s ease; }
+    .floatbar .tab-btn { position: relative; z-index: 1; flex: 1; min-width: 0; transition: color .2s ease; }
     .floatbar .tab-btn.toff { color: rgba(var(--fg),.5); }
+    .floatbar .tico { width: 28px; height: 28px; }
     :root[data-theme="light"] .floatbar {
       background: linear-gradient(180deg, rgba(255,255,255,.72), rgba(255,255,255,.55));
       border-color: rgba(0,0,0,.05);
@@ -350,7 +353,7 @@
     @media (max-width: 767px) {
       .page-inner {
         padding-top: calc(24px + max(env(safe-area-inset-top), 12px));
-        padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+        padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
       }
     }
     @media (min-width: 768px) {
@@ -394,7 +397,7 @@
   </div>
 
   <!-- Mobile bottom tab bar (floating glass pill) -->
-  <nav class="md:hidden fixed z-40" style="left:0;right:0;bottom:max(8px,calc(env(safe-area-inset-bottom) - 6px));display:flex;justify-content:center;pointer-events:none">
+  <nav class="md:hidden fixed z-40" style="left:0;right:0;bottom:max(4px,calc(env(safe-area-inset-bottom) - 14px));display:flex;justify-content:center;pointer-events:none">
     <div class="floatbar" id="bottom-tabs" style="pointer-events:auto"></div>
   </nav>
 
@@ -715,7 +718,7 @@
     botEl.innerHTML = '<div class="floatbar-ind" id="floatbar-ind"></div>' + TABS.map(function(t) {
       var on = t.id === currentTab;
       return '<button class="tab-btn tap95 flex flex-col items-center gap-1 ' + (on ? 'ton' : 'toff') +
-        '" data-tab="' + t.id + '" style="min-height:46px;font-size:10px;font-weight:500;padding:6px 2px">' +
+        '" data-tab="' + t.id + '" style="min-height:58px;font-size:12px;font-weight:500;padding:8px 16px">' +
         ICONS[t.id] + '<span>' + t.label + '</span></button>';
     }).join('');
 
